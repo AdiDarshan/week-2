@@ -1,21 +1,17 @@
-export type User = {
-  id: string;
-  username: string;
-  name: string;
-};
+import type {
+  ConversationDto,
+  LoginResponseDto,
+  MessageDto,
+  UserDto,
+} from '@week2/shared';
 
-export type Conversation = {
-  id: string;
-  title: string;
+export type User = UserDto;
+
+export type Conversation = Omit<ConversationDto, 'updatedAt'> & {
   updatedAt: Date;
-  participantIds: string[];
 };
 
-export type Message = {
-  id: string;
-  conversationId: string;
-  content: string;
-  senderId: string;
+export type Message = Omit<MessageDto, 'createdAt'> & {
   createdAt: Date;
   isPending: boolean;
 };
@@ -25,7 +21,4 @@ export type MessagesPage = {
   nextCursor: string | null;
 };
 
-export type LoginResponse = {
-  token: string;
-  user: User;
-};
+export type LoginResponse = LoginResponseDto;

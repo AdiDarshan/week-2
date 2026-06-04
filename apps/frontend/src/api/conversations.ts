@@ -1,9 +1,11 @@
-import { MOCK_CONVERSATIONS } from './mockData';
+import type { ConversationDto } from '@week2/shared';
+import { apiRequest } from './client';
 import type { Conversation } from './types';
 
-export async function getConversations(userId: string): Promise<Conversation[]> {
-  await new Promise((resolve) => setTimeout(resolve, 300)); // fake delay
-  return MOCK_CONVERSATIONS.filter((conversation) =>
-    conversation.participantIds.includes(userId),
-  );
+export async function getConversations(token: string): Promise<Conversation[]> {
+  const dtos = await apiRequest<ConversationDto[]>('/conversations', { token });
+  return dtos.map((dto) => ({
+    ...dto,
+    updatedAt: new Date(dto.updatedAt),
+  }));
 }

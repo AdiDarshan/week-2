@@ -22,7 +22,7 @@ export function useLogin() {
     setIsPending(true);
     setError(null);
     try {
-      const result = await login(handle, 'mock-password');
+      const result = await login(handle);
       setAuth(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
