@@ -3,28 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "devDependencies": {
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/ui": "^4.1.7",
-    "jsdom": "^29.1.1",
-    "typescript": "~6.0.2",
-    "vite": "^8.0.12",
-    "vitest": "^4.1.7"
-  },
-  "dependencies": {
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "dev": "npm run dev --workspace apps/frontend",
+    "dev:backend": "npm run dev --workspace apps/backend",
+    "build": "npm run build --workspaces --if-present",
+    "preview": "npm run preview --workspace apps/frontend",
+    "test": "npm run test --workspaces --if-present",
+    "test:watch": "npm run test:watch --workspace apps/frontend",
+    "typecheck": "npm run typecheck --workspaces --if-present"
   }
 }

@@ -38,12 +38,13 @@ export function useMessageComposer(conversationId: string, dispatch: Dispatch<Me
         }
 
         const senderId = auth.user.id;
+        const token = auth.token;
         const tempId = optimisticAddMessage(content, senderId);
         setValue('');
         const rollbackBump = bumpConversation(conversationId);
 
         try {
-            const realMessage = await sendMessage(conversationId, content, senderId);
+            const realMessage = await sendMessage(conversationId, content, token);
             dispatch({ type: 'CONFIRM_MESSAGE', payload: { tempId, realMessage } });
         } catch (err) {
             dispatch({ type: 'REMOVE_MESSAGE', payload: { id: tempId } });

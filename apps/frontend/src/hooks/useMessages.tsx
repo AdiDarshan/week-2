@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from 'react';
 import { getMessages } from '../api/messages';
 import type { Message } from '../api/types';
+import { useAuth } from './useAuth';
 import { messagesReducer } from './messagesReducer';
 import type { MessagesState } from './messagesReducer';
 
@@ -13,13 +14,16 @@ export const initialMessagesState: MessagesState = {
 
 export function useMessages(conversationId: string | undefined) {
   const [state, dispatch] = useReducer(messagesReducer, initialMessagesState);
+  const { auth } = useAuth();
+  const token = auth?.token ?? null;
 
   useEffect(() => {
-    if (!conversationId) {
+    if (!conversationId || !token) {
       dispatch({ type: 'LOAD_SUCCESS', payload: [] });
       return;
     }
 
+    const currentToken = token;
     let isCancelled = false;
     dispatch({ type: 'LOAD_START' });
 
@@ -28,16 +32,17 @@ export function useMessages(conversationId: string | undefined) {
         const allMessages: Message[] = [];
         let cursor: string | undefined;
 
-        // Walk the cursor-paginated endpoint until the server says there
-        // are no more pages. Each iteration takes the current slice and
-        // appends it to the accumulator.
         while (true) {
-          const page = await getMessages(conversationId, cursor);
-          if (isCancelled) return;
+          const page = await getMessages(conversationId, currentToken, cursor);
+          if (isCancelled) {
+            return;
+          }
 
           allMessages.push(...page.messages);
 
-          if (page.nextCursor === null) break;
+          if (page.nextCursor === null) {
+            break;
+          }
           cursor = page.nextCursor;
         }
 
@@ -52,7 +57,7 @@ export function useMessages(conversationId: string | undefined) {
     return () => {
       isCancelled = true;
     };
-  }, [conversationId]);
+  }, [conversationId, token]);
 
   return {
     state,

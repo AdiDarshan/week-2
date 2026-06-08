@@ -11,7 +11,7 @@ const CONVERSATION_ID = 'c0c0c0c0-c0c0-4c0c-8c0c-cccccccc0001';
 
 const aliceAuth = {
   token: 'test-token',
-  user: { id: ALICE_ID, username: 'alice', name: 'Alice' },
+  user: { id: ALICE_ID, name: 'Alice' },
 };
 
 const emptyState: MessagesState = {

@@ -35,20 +35,21 @@ function withUpdatedAt(
 }
 
 export function ConversationsProvider({ children }: { children: ReactNode }) {
-  const { userId } = useAuth();
+  const { auth } = useAuth();
+  const token = auth?.token ?? null;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!userId) {
+    if (!token) {
       setConversations([]);
       setIsLoading(false);
       setError(null);
       return;
     }
 
-    const currentUserId = userId;
+    const currentToken = token;
     let isCancelled = false;
 
     async function loadConversations() {
@@ -56,7 +57,7 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        const data = await getConversations(currentUserId);
+        const data = await getConversations(currentToken);
         if (!isCancelled) {
           setConversations(sortByMostRecent(data));
         }
@@ -76,7 +77,7 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
     return () => {
       isCancelled = true;
     };
-  }, [userId]);
+  }, [token]);
 
   const bumpConversation = useCallback((conversationId: string) => {
     const bumpedAt = new Date();
@@ -88,10 +89,14 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
-      if (previousAt === undefined) return;
+      if (previousAt === undefined) {
+        return;
+      }
       setConversations((prev) => {
         const current = prev.find((c) => c.id === conversationId);
-        if (current?.updatedAt !== bumpedAt) return prev;
+        if (current?.updatedAt !== bumpedAt) {
+          return prev;
+        }
         return withUpdatedAt(prev, conversationId, previousAt!);
       });
     };

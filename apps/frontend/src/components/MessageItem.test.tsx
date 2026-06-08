@@ -19,7 +19,7 @@ const pendingMessage: Message = {
 
 const aliceAuth = {
   token: 'test-token',
-  user: { id: ALICE_ID, username: 'alice', name: 'Alice' },
+  user: { id: ALICE_ID, name: 'Alice' },
 };
 
 describe('<MessageItem />', () => {
