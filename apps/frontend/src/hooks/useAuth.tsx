@@ -1,29 +1,27 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { LoginResponse } from '../api/types';
+import type { LoginResponseDto } from '../api/types';
 
 type AuthContextValue = {
-  auth: LoginResponse | null;
-  userId: string | null;          
-  setAuth: (next: LoginResponse | null) => void;
-  logout: () => void;             
+  auth: LoginResponseDto | null;
+  setAuth: (next: LoginResponseDto | null) => void;
+  logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 type AuthProviderProps = {
   children: ReactNode;
-  initialAuth?: LoginResponse | null;
+  initialAuth?: LoginResponseDto | null;
 };
 
 export function AuthProvider({ children, initialAuth = null }: AuthProviderProps) {
-  const [auth, setAuth] = useState<LoginResponse | null>(initialAuth);
+  const [auth, setAuth] = useState<LoginResponseDto | null>(initialAuth);
 
   const logout = useCallback(() => setAuth(null), []);
 
   const value = useMemo<AuthContextValue>(() => ({
     auth,
-    userId: auth?.user.id ?? null,
     setAuth,
     logout,
   }), [auth, logout]);
