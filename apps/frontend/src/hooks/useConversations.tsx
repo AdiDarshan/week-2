@@ -9,6 +9,7 @@ type ConversationsContextValue = {
   isLoading: boolean;
   error: Error | null;
   bumpConversation: (conversationId: string) => () => void;
+  addConversation: (conversation: Conversation) => void;
 };
 
 const ConversationsContext = createContext<ConversationsContextValue | null>(null);
@@ -79,6 +80,13 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
     };
   }, [token]);
 
+  const addConversation = useCallback((conversation: Conversation) => {
+    setConversations((prev) => {
+      const withoutDuplicate = prev.filter((c) => c.id !== conversation.id);
+      return sortByMostRecent([conversation, ...withoutDuplicate]);
+    });
+  }, []);
+
   const bumpConversation = useCallback((conversationId: string) => {
     const bumpedAt = new Date();
     let previousAt: Date | undefined;
@@ -104,7 +112,7 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
 
   return (
     <ConversationsContext.Provider
-      value={{ conversations, isLoading, error, bumpConversation }}
+      value={{ conversations, isLoading, error, bumpConversation, addConversation }}
     >
       {children}
     </ConversationsContext.Provider>
