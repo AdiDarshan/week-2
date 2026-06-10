@@ -1,4 +1,4 @@
-import type { ApiErrorCode, ApiErrorDto } from '@week2/shared';
+import type { ApiErrorCode, ApiErrorDto } from './types';
 
 export type ApiClientErrorCode = ApiErrorCode | 'NETWORK_ERROR';
 
