@@ -1,28 +1,36 @@
 import { useLogin } from '../hooks/useLogin';
+import { LoginScreenView } from './LoginScreenView';
 
 export function LoginScreen() {
-  const { username, setUsername, error, isPending, canSubmit, handleSubmit } = useLogin();
+  const {
+    mode,
+    email,
+    password,
+    name,
+    error,
+    isPending,
+    canSubmit,
+    setEmail,
+    setPassword,
+    setName,
+    toggleMode,
+    handleSubmit,
+  } = useLogin();
 
   return (
-    <div className="login-screen">
-      <h1>Who are you?</h1>
-      <form className="login-form" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="username"
-          autoFocus
-          autoComplete="username"
-          placeholder="Enter your username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          disabled={isPending}
-          aria-label="Username"
-        />
-        <button type="submit" disabled={!canSubmit}>
-          {isPending ? 'Signing in…' : 'Continue'}
-        </button>
-      </form>
-      {error && <p role="alert">{error}</p>}
-    </div>
+    <LoginScreenView
+      mode={mode}
+      email={email}
+      password={password}
+      name={name}
+      error={error}
+      isPending={isPending}
+      canSubmit={canSubmit}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      onNameChange={setName}
+      onToggleMode={toggleMode}
+      onSubmit={handleSubmit}
+    />
   );
 }
