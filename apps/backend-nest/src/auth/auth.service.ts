@@ -28,10 +28,12 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<LoginResponse> {
-    const user = this.usersService.findByEmail(email);
-    const hash = user?.passwordHash ?? (await this.dummyHash);
-    const valid = await verifyPassword(password, hash);
-    if (!user || !valid) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new InvalidCredentialsError();
+    }
+    const valid = await verifyPassword(password, user.passwordHash);
+    if (!valid) {
       throw new InvalidCredentialsError();
     }
 
