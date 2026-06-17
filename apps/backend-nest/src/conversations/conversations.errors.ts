@@ -11,6 +11,14 @@ export class ConversationNotFoundError extends DomainError {
   }
 }
 
+export class InvalidConversationIdError extends DomainError {
+  readonly category: DomainErrorCategory = 'BAD_REQUEST';
+
+  constructor(public readonly id: string) {
+    super(`"${id}" is not a valid conversation id`);
+  }
+}
+
 export class NotAConversationParticipantError extends DomainError {
   readonly category: DomainErrorCategory = 'FORBIDDEN';
 

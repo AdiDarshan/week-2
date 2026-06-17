@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConversationsService } from './conversations.service';
-import { ConversationsDbService } from './conversations-db.service';
+import { ConversationsDbService } from './conversations.db.service';
 import { UsersService } from '../users/users.service';
 import { UsersDbService } from '../users/users.db.service';
 import { UserNotFoundError } from '../users/users.errors';
@@ -147,26 +147,27 @@ describe('ConversationsService', () => {
     });
   });
 
-  describe('touchUpdatedAt', () => {
+  describe('updateLastMessageAt', () => {
     it('updates the updatedAt of an existing conversation', async () => {
       const conversation = await service.createConversation({
         creator: alice,
         participantIds: [bob.id],
       });
-      const later = new Date(Date.now() + 60_000).toISOString();
+      const later = new Date(Date.now() + 60_000);
 
-      service.touchUpdatedAt(conversation.id, later);
+      await service.updateLastMessageAt(conversation.id, later);
 
-      expect(service.findById(conversation.id)?.updatedAt).toBe(later);
+      const refreshed = await service.findById(conversation.id);
+      expect(refreshed?.updatedAt).toBe(later.toISOString());
     });
 
-    it('is a no-op for an unknown conversation id', () => {
-      expect(() =>
-        service.touchUpdatedAt(
-          '00000000-0000-0000-0000-000000000000',
-          new Date().toISOString(),
+    it('is a no-op for an unknown conversation id', async () => {
+      await expect(
+        service.updateLastMessageAt(
+          '000000000000000000000000',
+          new Date(),
         ),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
   });
 });

@@ -1,8 +1,13 @@
-import { randomUUID } from 'node:crypto';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { ConversationsDbService } from './conversations-db.service';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ClientSession } from 'mongoose';
+import { ConversationsDbService } from './conversations.db.service';
+import { ConversationNotFoundError } from './conversations.errors';
 import { UsersService } from '../users/users.service';
-import { UserNotFoundError } from '../users/users.errors';
+import type { ConversationDocument } from './schemas/conversation.schema';
 import type { User } from '../users/types';
 import type { Conversation } from './types';
 
@@ -20,15 +25,25 @@ export class ConversationsService {
   ) {}
 
   async getConversationsForUser(user: User): Promise<Conversation[]> {
-    return this.conversationsDb.listConversationsForUser(user.id);
+    const docs = await this.conversationsDb.listConversationsForUser(user.id);
+    return docs.map(toConversation);
   }
 
-  findById(id: string): Conversation | undefined {
-    return this.conversationsDb.findConversationById(id);
+  async findById(id: string): Promise<Conversation | undefined> {
+    const doc = await this.conversationsDb.findConversationById(id);
+    return doc ? toConversation(doc) : undefined;
   }
 
-  touchUpdatedAt(id: string, updatedAt: string): void {
-    this.conversationsDb.touchConversationUpdatedAt(id, updatedAt);
+  async updateLastMessageAt(
+    id: string,
+    lastMessageAt: Date,
+    session?: ClientSession,
+  ): Promise<Conversation> {
+    const doc = await this.conversationsDb.updateLastMessageAt(id, lastMessageAt, session);
+    if (!doc){
+      throw new ConversationNotFoundError(id);
+    }
+    return toConversation(doc);
   }
 
   async createConversation(
@@ -44,25 +59,35 @@ export class ConversationsService {
       );
     }
 
-    const participants = uniqueIds.map((id) => {
-      const user = this.usersService.findById(id);
-      if (!user) {
-        throw new UserNotFoundError(id);
-      }
-      return user;
-    });
+    const participants = await Promise.all(
+      uniqueIds.map((id) =>
+        this.usersService.findById(id).then((user) => {
+          if (!user) {
+            throw new NotFoundException(`unknown participant "${id}"`);
+          }
+          return user;
+        }),
+      ),
+    );
 
     const title =
       input.title?.trim() || participants.map((user) => user.name).join(' & ');
 
-    const conversation: Conversation = {
-      id: randomUUID(),
+    const doc = await this.conversationsDb.insertConversation({
       title,
-      updatedAt: new Date().toISOString(),
       participantIds: participants.map((user) => user.id),
-    };
+      lastMessageAt: new Date(),
+    });
 
-    this.conversationsDb.insertConversation(conversation);
-    return conversation;
+    return toConversation(doc);
   }
+}
+
+function toConversation(doc: ConversationDocument): Conversation {
+  return {
+    id: doc._id.toString(),
+    title: doc.title,
+    updatedAt: doc.lastMessageAt.toISOString(),
+    participantIds: doc.participantIds,
+  };
 }
