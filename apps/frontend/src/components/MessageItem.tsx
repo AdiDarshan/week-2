@@ -6,8 +6,8 @@ type MessageItemProps = {
 };
 
 export function MessageItem({ message }: MessageItemProps) {
-    const { auth, userId } = useAuth();
-    const isMine = auth !== null && message.senderId === userId;
+    const { auth } = useAuth();
+    const isMine = auth?.user.id === message.senderId;
 
     return (
         <li

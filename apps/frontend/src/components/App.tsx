@@ -7,14 +7,14 @@ import { useAuth } from "../hooks/useAuth";
 import { ConversationsProvider } from "../hooks/useConversations";
 
 export function App() {
-    const { auth, userId } = useAuth();
+    const { auth } = useAuth();
 
     if (!auth) {
         return <LoginScreen />;
     }
 
     return (
-        <ConversationsProvider key={userId}>
+        <ConversationsProvider key={auth.user.id}>
             <AuthenticatedApp />
         </ConversationsProvider>
     );

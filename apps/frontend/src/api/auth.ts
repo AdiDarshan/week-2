@@ -1,12 +1,32 @@
-import type { LoginRequestDto, LoginResponseDto } from '@week2/shared';
 import { apiRequest } from './client';
-import type { LoginResponse } from './types';
+import type {
+  LoginRequestDto,
+  LoginResponseDto,
+  SignupRequestDto,
+} from './types';
 
 export async function login(
-  username: string,
-): Promise<LoginResponse> {
-  const body: LoginRequestDto = { username: username.trim() };
+  email: string,
+  password: string,
+): Promise<LoginResponseDto> {
+  const body: LoginRequestDto = { email: email.trim(), password };
   return apiRequest<LoginResponseDto>('/auth/login', {
+    method: 'POST',
+    body,
+  });
+}
+
+export async function signup(
+  email: string,
+  password: string,
+  name: string,
+): Promise<LoginResponseDto> {
+  const body: SignupRequestDto = {
+    email: email.trim(),
+    password,
+    name: name.trim(),
+  };
+  return apiRequest<LoginResponseDto>('/auth/signup', {
     method: 'POST',
     body,
   });

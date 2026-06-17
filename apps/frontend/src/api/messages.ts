@@ -1,10 +1,11 @@
+import { apiRequest } from './client';
 import type {
+  Message,
   MessageDto,
+  MessagesPage,
   MessagesPageDto,
   SendMessageRequestDto,
-} from '@week2/shared';
-import { apiRequest } from './client';
-import type { Message, MessagesPage } from './types';
+} from './types';
 
 function fromMessageDto(dto: MessageDto): Message {
   return {

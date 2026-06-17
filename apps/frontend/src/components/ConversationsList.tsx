@@ -1,5 +1,6 @@
 import { useConversations } from '../hooks/useConversations';
 import { ConversationItem } from './ConversationItem';
+import { NewConversation } from './NewConversation';
 
 type ConversationsListProps = {
   onConversationSelected: (conversationId: string) => void;
@@ -11,6 +12,8 @@ export function ConversationsList({ onConversationSelected }: ConversationsListP
   return (
     <aside className="conversations">
       <h2 className="conversations-title">Conversations</h2>
+
+      <NewConversation onCreated={onConversationSelected} />
 
       {isLoading && <div className="placeholder">Loading conversations...</div>}
       {error && <div className="placeholder">Something went wrong.</div>}
@@ -29,8 +32,6 @@ export function ConversationsList({ onConversationSelected }: ConversationsListP
           ))}
         </ul>
       )}
-
-      
     </aside>
   );
 }

@@ -171,6 +171,32 @@ textarea {
   cursor: not-allowed;
 }
 
+.login-mode-toggle {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  padding: 6px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.login-mode-toggle:hover:not(:disabled) {
+  background: var(--hover);
+  filter: brightness(1.08);
+}
+
+.login-mode-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.login-mode-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .login-screen [role='alert'] {
   color: var(--danger);
   margin: 0;
@@ -219,6 +245,126 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* New conversation: collapsed button + expanded form */
+.new-conversation-button {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.new-conversation-button:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+}
+
+.new-conversation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.new-conversation-form input,
+.new-conversation-form select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-h);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+.new-conversation-form input:focus,
+.new-conversation-form select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.new-conversation-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.new-conversation-select {
+  width: 100%;
+}
+
+.new-conversation-select option {
+  padding: 6px 8px;
+}
+
+.new-conversation-select option:checked {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--text-h);
+}
+
+.new-conversation-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.new-conversation-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.new-conversation-actions button {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.new-conversation-actions button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.new-conversation-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.new-conversation-cancel {
+  background: transparent !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.new-conversation-cancel:hover:not(:disabled) {
+  background: var(--hover) !important;
+}
+
+.new-conversation-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0;
 }
 
 .conversations li {
