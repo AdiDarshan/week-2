@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   Param,
-  ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
@@ -13,7 +12,8 @@ import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { ListMessagesQueryDto } from './dto/list-messages-query.dto';
 import { CurrentUser } from '../common/decorators/current.user.decorator';
-import type { Message, MessagesPage } from './types';
+import type { MessagesPage } from './types';
+import type { MessageDto } from './dto/message.dto';
 import type { User } from '../users/types';
 
 @UseGuards(JwtAuthGuard)
@@ -24,7 +24,7 @@ export class MessagesController {
   @Get()
   listMessages(
     @CurrentUser() user: User,
-    @Param('id', ParseUUIDPipe) conversationId: string,
+    @Param('id') conversationId: string,
     @Query() query: ListMessagesQueryDto,
   ): Promise<MessagesPage> {
     return this.messagesService.getMessagesPage({
@@ -38,9 +38,9 @@ export class MessagesController {
   @Post()
   postMessage(
     @CurrentUser() user: User,
-    @Param('id', ParseUUIDPipe) conversationId: string,
+    @Param('id') conversationId: string,
     @Body() body: CreateMessageDto,
-  ): Promise<Message> {
+  ): Promise<MessageDto> {
     return this.messagesService.createMessage({
       conversationId,
       senderId: user.id,
