@@ -5,21 +5,72 @@ the wire contract documented in [`../../API_CONTRACT.md`](../../API_CONTRACT.md)
 real bcrypt + JWT auth, conversations, paginated messages, and a unified
 error envelope.
 
-State is **in-memory** (no database) — users, conversations, and messages
-are reset every time the process restarts.
+State is persisted to **MongoDB** via Mongoose. The connection string is
+read from `MONGO_URI` (see [Database](#database)).
 
 ## Quick start
 
-From the **repo root**:
+To run the full stack (Mongo + this backend + the frontend), you need
+**three things** up: MongoDB, the NestJS API on `:3001`, and the Vite
+dev server on `:5173`.
+
+From the **repo root**, one-time setup:
 
 ```bash
 npm install
 cp apps/backend-nest/.env.example apps/backend-nest/.env
-npm run dev:backend-nest
+# edit JWT_SECRET to any string ≥ 16 chars
 ```
 
-The server starts on `PORT` (default `3001`). The frontend's
-`VITE_API_BASE_URL` should point at the same origin.
+Then, in this order:
+
+```bash
+# 1. MongoDB — pick one (see Database section for more options)
+brew services start mongodb-community
+# or: docker run -d --name chat-mongo -p 27017:27017 -v chat-mongo-data:/data/db mongo:8
+
+# 2. Backend (terminal 1) — http://localhost:3001
+npm run dev:backend-nest
+
+# 3. Frontend (terminal 2) — http://localhost:5173
+npm run dev
+```
+
+Open http://localhost:5173 in two browser windows (use two different
+browsers or one incognito) to chat as two users — auth is held in React
+state per window, so they need separate sessions.
+
+The backend listens on `PORT` (default `3001`). The frontend defaults
+`VITE_API_BASE_URL` to `http://localhost:3001`; override it in
+`apps/frontend/.env` if you move the backend.
+
+## Database
+
+The backend talks to MongoDB through `@nestjs/mongoose`. You need a
+running Mongo instance reachable at `MONGO_URI` before booting the
+server; the database (path segment of the URI, e.g. `chat-app`) is
+created on first write.
+
+Run a local Mongo however you prefer. Two common options on macOS:
+
+```bash
+# Option A — Homebrew (auto-starts on login)
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb-community
+
+# Option B — Docker
+docker run -d --name chat-mongo -p 27017:27017 -v chat-mongo-data:/data/db mongo:8
+```
+
+Inspect or wipe data with `mongosh`:
+
+```bash
+mongosh "$MONGO_URI"
+# inside the shell:
+# show collections
+# db.messages.deleteMany({})
+```
 
 ## Environment
 
@@ -27,12 +78,13 @@ All variables are validated at startup by Joi (see `src/app.module.ts`);
 missing or malformed values fail boot. See `.env.example` for a working
 template.
 
-| Variable               | Required | Example                          | Notes                                                |
-| ---------------------- | -------- | -------------------------------- | ---------------------------------------------------- |
-| `PORT`                 | yes      | `3001`                           | Port to listen on.                                   |
-| `ALLOWED_CORS_ORIGINS` | yes      | `http://localhost:5173`          | Comma-separated allowed Origins for browser callers. |
-| `JWT_SECRET`           | yes      | (long random string, ≥ 16 chars) | HMAC secret for signing / verifying JWTs.            |
-| `MAX_MESSAGE_LENGTH`   | yes      | `4000`                           | Currently validated but unused; see "Known gaps".    |
+| Variable               | Required | Example                              | Notes                                                |
+| ---------------------- | -------- | ------------------------------------ | ---------------------------------------------------- |
+| `PORT`                 | yes      | `3001`                               | Port to listen on.                                   |
+| `ALLOWED_CORS_ORIGINS` | yes      | `http://localhost:5173`              | Comma-separated allowed Origins for browser callers. |
+| `JWT_SECRET`           | yes      | (long random string, ≥ 16 chars)     | HMAC secret for signing / verifying JWTs.            |
+| `MAX_MESSAGE_LENGTH`   | yes      | `4000`                               | Currently validated but unused; see "Known gaps".    |
+| `MONGO_URI`            | yes      | `mongodb://localhost:27017/chat-app` | Mongoose connection string; include the db name.     |
 
 ## Scripts
 
@@ -62,7 +114,7 @@ npm run typecheck --workspaces --if-present
 ```
 src/
   auth/          POST /auth/signup, POST /auth/login, JWT strategy + guard
-  users/         GET /users, GET /users/me, in-memory user store
+  users/         GET /users, GET /users/me, users collection
   conversations/ GET /conversations, POST /conversations
   messages/      GET|POST /conversations/:id/messages, cursor pagination
   common/
@@ -73,8 +125,9 @@ src/
   main.ts        bootstrap: ValidationPipe, CORS, listen
 ```
 
-`*-db.service.ts` in each module is the in-memory store; swapping it for a
-real database later only touches those files.
+`*-db.service.ts` in each module wraps the Mongoose model for that
+collection; controllers and feature services never import Mongoose
+directly.
 
 ## API
 
@@ -87,7 +140,6 @@ Typical flow:
 
 ## Known gaps
 
-- **In-memory store.** Restart = wipe. There is no persistence layer.
 - **`MAX_MESSAGE_LENGTH` is currently unused.** The 4000-character cap is
   hardcoded in `messages.service.ts`; the env var is validated at boot but
   never read.

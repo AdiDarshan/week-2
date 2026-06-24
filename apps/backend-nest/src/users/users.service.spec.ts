@@ -40,17 +40,21 @@ describe('UsersService', () => {
     it('persists the user so it can be looked up by email and id', async () => {
       const user = await service.createUser('bob@example.com', 'pw', 'Bob');
 
-      expect(service.findByEmail('bob@example.com')).toEqual(user);
-      expect(service.findById(user.id)).toEqual(user);
+      await expect(service.findByEmail('bob@example.com')).resolves.toEqual(
+        user,
+      );
+      await expect(service.findById(user.id)).resolves.toEqual(user);
     });
   });
 
   describe('findByEmail / findById', () => {
-    it('returns undefined for unknown email or id', () => {
-      expect(service.findByEmail('nobody@example.com')).toBeUndefined();
-      expect(service.findById('00000000-0000-0000-0000-000000000000')).toBe(
-        undefined,
-      );
+    it('returns undefined for unknown email or id', async () => {
+      await expect(
+        service.findByEmail('nobody@example.com'),
+      ).resolves.toBeUndefined();
+      await expect(
+        service.findById('000000000000000000000000'),
+      ).resolves.toBeUndefined();
     });
 
     it('treats emails case- and whitespace-insensitively', async () => {
@@ -72,7 +76,7 @@ describe('UsersService', () => {
       const alice = await service.createUser('a@x.com', 'pw12345678', 'Alice');
       const bob = await service.createUser('b@x.com', 'pw12345678', 'Bob');
 
-      const users = service.getUsers();
+      const users = await service.getUsers();
 
       expect(users).toHaveLength(2);
       expect(users).toEqual(
@@ -87,8 +91,8 @@ describe('UsersService', () => {
       }
     });
 
-    it('returns an empty list when no users have been created', () => {
-      expect(service.getUsers()).toEqual([]);
+    it('returns an empty list when no users have been created', async () => {
+      await expect(service.getUsers()).resolves.toEqual([]);
     });
   });
 });

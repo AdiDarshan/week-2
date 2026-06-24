@@ -1,27 +1,58 @@
 import { Injectable } from '@nestjs/common';
-import { EmailAlreadyExistsError } from './users.errors';
-import type { RegisteredUser, User } from './types';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import type { UserDocument } from './schemas/user.schema';
+import { User } from './schemas/user.schema';
+import { DuplicateKeyError } from '../common/errors/persistence.error';
+import { InvalidUserIdError } from './users.errors';
+
+export type CreateUserInput = {
+  email: string;
+  name: string;
+  passwordHash: string;
+};
+
+const MONGO_DUPLICATE_KEY_ERROR_CODE = 11000;
+
+function isMongoDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: unknown }).code === MONGO_DUPLICATE_KEY_ERROR_CODE
+  );
+}
 
 @Injectable()
 export class UsersDbService {
-  private readonly users: RegisteredUser[] = [];
+  constructor(
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
+  ) {}
 
-  insertUser(user: RegisteredUser): void {
-    if (this.users.some((existing) => existing.email === user.email)) {
-      throw new EmailAlreadyExistsError(user.email);
+  async insertUser(input: CreateUserInput): Promise<UserDocument> {
+    try {
+      return await this.userModel.create(input);
+    } catch (error) {
+      if (isMongoDuplicateKeyError(error)) {
+        throw new DuplicateKeyError();
+      }
+      throw error;
     }
-    this.users.push(user);
   }
 
-  findUserById(id: string): RegisteredUser | undefined {
-    return this.users.find((user) => user.id === id);
+  async findUserById(id: string): Promise<UserDocument | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new InvalidUserIdError(id);
+    }
+    return this.userModel.findById(id).exec();
   }
 
-  findUserByEmail(email: string): RegisteredUser | undefined {
-    return this.users.find((user) => user.email === email);
+  async findUserByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email }).exec();
   }
 
-  getUsers(): User[] {
-    return this.users.map(({ id, name }) => ({ id, name }));
+  async listUsers(): Promise<UserDocument[]> {
+    return this.userModel.find().exec();
   }
 }

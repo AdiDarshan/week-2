@@ -15,7 +15,8 @@ export class UsersController {
   }
 
   @Get()
-  listUsers(@CurrentUser() user: User): User[] {
-    return this.usersService.getUsers().filter((u) => u.id !== user.id);
+  async listUsers(@CurrentUser() user: User): Promise<User[]> {
+    const users = await this.usersService.getUsers();
+    return users.filter((u) => u.id !== user.id);
   }
 }

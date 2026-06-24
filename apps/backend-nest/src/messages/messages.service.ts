@@ -1,16 +1,22 @@
-import { randomUUID } from 'node:crypto';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+} from '@nestjs/common';
+import { InjectConnection } from '@nestjs/mongoose';
+import { Connection, Types } from 'mongoose';
 import { ConversationsService } from '../conversations/conversations.service';
 import {
   ConversationNotFoundError,
   NotAConversationParticipantError,
 } from '../conversations/conversations.errors';
-import { MessagesDbService } from './messages-db.service';
+import { MessagesDbService } from './messages.db.service';
+import type { MessageDocument } from './schemas/message.schema';
 import { UsersService } from '../users/users.service';
 import { UserNotFoundError } from '../users/users.errors';
 import type { Message, MessagesPage } from './types';
+import type { CreateMessageInput, DecodedCursor } from './messages.db.service';
 
-const MAX_MESSAGE_LENGTH = 500;
+const MAX_MESSAGE_LENGTH = 4000;
 
 export const DEFAULT_MESSAGES_LIMIT = 20;
 const MAX_MESSAGES_LIMIT = 100;
@@ -22,27 +28,24 @@ export type GetMessagesPageInput = {
   limit?: number;
 };
 
-export type CreateMessageInput = {
-  conversationId: string;
-  senderId: string;
-  content: string;
-};
+
 
 @Injectable()
 export class MessagesService {
   constructor(
+    @InjectConnection() private readonly connection: Connection,
     private readonly usersService: UsersService,
     private readonly conversationsService: ConversationsService,
     private readonly messagesDb: MessagesDbService,
   ) {}
 
   async getMessagesPage(input: GetMessagesPageInput): Promise<MessagesPage> {
-    const requester = this.usersService.findById(input.requesterId);
+    const requester = await this.usersService.findById(input.requesterId);
     if (!requester) {
       throw new UserNotFoundError(input.requesterId);
     }
 
-    const conversation = this.conversationsService.findById(
+    const conversation = await this.conversationsService.findById(
       input.conversationId,
     );
     if (!conversation) {
@@ -53,31 +56,30 @@ export class MessagesService {
       throw new NotAConversationParticipantError(requester.id, conversation.id);
     }
 
-    const startIndex = parseCursor(input.cursor);
     const limit = clampLimit(input.limit);
+    const cursor = input.cursor ? decodeCursor(input.cursor) : undefined;
 
-    const all = this.messagesDb.listMessagesForConversation(conversation.id);
+    const { messages: docs, hasMore } =
+      await this.messagesDb.findConversationMessages(
+        conversation.id,
+        limit,
+        cursor,
+      );
 
-    if (startIndex > all.length) {
-      throw new BadRequestException(`invalid cursor "${input.cursor}"`);
-    }
+    const messages: Message[] = docs.map(toMessage);
 
-    const endIndex = startIndex + limit;
-    const messages = all.slice(startIndex, endIndex);
-
-    const hasMore = endIndex < all.length;
-    const nextCursor = hasMore ? String(endIndex) : null;
+    const nextCursor = hasMore ? encodeCursor(docs[docs.length - 1]) : null;
 
     return { messages, nextCursor };
   }
 
   async createMessage(input: CreateMessageInput): Promise<Message> {
-    const sender = this.usersService.findById(input.senderId);
+    const sender = await this.usersService.findById(input.senderId);
     if (!sender) {
       throw new UserNotFoundError(input.senderId);
     }
 
-    const conversation = this.conversationsService.findById(
+    const conversation = await this.conversationsService.findById(
       input.conversationId,
     );
     if (!conversation) {
@@ -98,31 +100,48 @@ export class MessagesService {
       );
     }
 
-    const createdAt = new Date().toISOString();
-    const message: Message = {
-      id: randomUUID(),
-      conversationId: conversation.id,
-      content,
-      senderId: sender.id,
-      createdAt,
-    };
+    const session = await this.connection.startSession();
+    let doc: MessageDocument;
+    try {
+      await session.withTransaction(async () => {
+        doc = await this.messagesDb.insertMessage(input, session);
+        await this.conversationsService.updateLastMessageAt(
+          conversation.id,
+          doc.createdAt,
+          session,
+        );
+      });
+    } finally {
+      await session.endSession();
+    }
 
-    this.messagesDb.insertMessage(message);
-    this.conversationsService.touchUpdatedAt(conversation.id, createdAt);
-
-    return message;
+    return toMessage(doc!);
   }
 }
 
-function parseCursor(cursor: string | undefined): number {
-  if (cursor === undefined) {
-    return 0;
-  }
-  const n = Number(cursor);
-  if (!Number.isInteger(n) || n < 0) {
-    throw new BadRequestException(`invalid cursor "${cursor}"`);
-  }
-  return n;
+function toMessage(doc: MessageDocument): Message {
+  return {
+    id: doc._id.toString(),
+    conversationId: doc.conversationId,
+    content: doc.content,
+    senderId: doc.senderId,
+    createdAt: doc.createdAt.toISOString(),
+  };  
+}
+
+function encodeCursor(doc: MessageDocument): string {
+  const createdAtIso = new Date(doc.createdAt).toISOString();
+  const id = String(doc._id);
+  return Buffer.from(`${createdAtIso}|${id}`).toString('base64');
+}
+
+function decodeCursor(cursor: string): DecodedCursor {
+  const decoded = Buffer.from(cursor, 'base64').toString('utf8');
+  const [createdAtIso, id] = decoded.split('|');
+  return {
+    createdAt: new Date(createdAtIso),
+    id: new Types.ObjectId(id),
+  };
 }
 
 function clampLimit(limit: number | undefined): number {

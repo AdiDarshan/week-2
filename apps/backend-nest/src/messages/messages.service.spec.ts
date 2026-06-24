@@ -1,9 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesService } from './messages.service';
-import { MessagesDbService } from './messages-db.service';
+import { MessagesDbService } from './messages.db.service';
 import { ConversationsService } from '../conversations/conversations.service';
-import { ConversationsDbService } from '../conversations/conversations-db.service';
+import { ConversationsDbService } from '../conversations/conversations.db.service';
 import {
   ConversationNotFoundError,
   NotAConversationParticipantError,
@@ -72,7 +72,7 @@ describe('MessagesService', () => {
       expect(message.id).toBeDefined();
       expect(message.createdAt).toBeDefined();
 
-      const refreshed = conversationsService.findById(conversation.id);
+      const refreshed = await conversationsService.findById(conversation.id);
       expect(refreshed).toBeDefined();
       expect(refreshed!.updatedAt > before).toBe(true);
     });

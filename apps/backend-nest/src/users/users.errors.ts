@@ -18,3 +18,11 @@ export class UserNotFoundError extends DomainError {
     super(`user "${id}" not found`);
   }
 }
+
+export class InvalidUserIdError extends DomainError {
+  readonly category: DomainErrorCategory = 'BAD_REQUEST';
+
+  constructor(public readonly id: string) {
+    super(`"${id}" is not a valid user id`);
+  }
+}
