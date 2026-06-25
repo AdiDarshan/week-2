@@ -1,20 +1,22 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ClientSession } from 'mongoose';
 import { ConversationsDbService } from './conversations.db.service';
 import { ConversationNotFoundError } from './conversations.errors';
 import { UsersService } from '../users/users.service';
+import { AI_ASSISTANT_PARTICIPANT_ID } from '../common/constants';
 import type { ConversationDocument } from './schemas/conversation.schema';
 import type { User } from '../users/types';
-import type { Conversation } from './types';
+import type { Conversation, ConversationType } from './types';
 
 export type CreateConversationInput = {
   creator: User;
   participantIds: string[];
   title?: string;
+  type?: ConversationType;
 };
 
 @Injectable()
@@ -40,13 +42,33 @@ export class ConversationsService {
     session?: ClientSession,
   ): Promise<Conversation> {
     const doc = await this.conversationsDb.updateLastMessageAt(id, lastMessageAt, session);
-    if (!doc){
+    if (!doc) {
       throw new ConversationNotFoundError(id);
     }
     return toConversation(doc);
   }
 
-  async createConversation(
+  async createConversation(input: CreateConversationInput): Promise<Conversation> {
+    const type = input.type ?? 'human';
+    return type === 'assistant'
+      ? this.createAssistantConversation(input.creator, input.title)
+      : this.createHumanConversation(input);
+  }
+
+  private async createAssistantConversation(
+    creator: User,
+    title?: string,
+  ): Promise<Conversation> {
+    const doc = await this.conversationsDb.insertConversation({
+      title: title?.trim() || 'AI Assistant',
+      type: 'assistant',
+      participantIds: [creator.id, AI_ASSISTANT_PARTICIPANT_ID],
+      lastMessageAt: new Date(),
+    });
+    return toConversation(doc);
+  }
+
+  private async createHumanConversation(
     input: CreateConversationInput,
   ): Promise<Conversation> {
     const uniqueIds = Array.from(
@@ -71,11 +93,12 @@ export class ConversationsService {
     );
 
     const title =
-      input.title?.trim() || participants.map((user) => user.name).join(' & ');
+      input.title?.trim() || participants.map((u) => u.name).join(' & ');
 
     const doc = await this.conversationsDb.insertConversation({
       title,
-      participantIds: participants.map((user) => user.id),
+      type: 'human',
+      participantIds: participants.map((u) => u.id),
       lastMessageAt: new Date(),
     });
 
@@ -87,6 +110,7 @@ function toConversation(doc: ConversationDocument): Conversation {
   return {
     id: doc._id.toString(),
     title: doc.title,
+    type: doc.type,
     updatedAt: doc.lastMessageAt.toISOString(),
     participantIds: doc.participantIds,
   };

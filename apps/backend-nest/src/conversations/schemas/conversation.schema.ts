@@ -6,6 +6,9 @@ export class Conversation {
   @Prop({ required: true })
   title: string;
 
+  @Prop({ required: true, enum: ['human', 'assistant'], default: 'human' })
+  type: 'human' | 'assistant';
+
   @Prop({ type: [String], required: true })
   participantIds: string[];
 
