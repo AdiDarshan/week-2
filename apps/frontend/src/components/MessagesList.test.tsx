@@ -18,6 +18,7 @@ const emptyState: MessagesState = {
   messages: [],
   isLoading: false,
   error: null,
+  streamingContent: null,
 };
 
 const populatedState: MessagesState = {
@@ -41,6 +42,7 @@ const populatedState: MessagesState = {
   ] satisfies Message[],
   isLoading: false,
   error: null,
+  streamingContent: null,
 };
 
 function renderList(props: {
@@ -70,7 +72,7 @@ describe('<MessagesList />', () => {
   it('shows the loading placeholder while messages are being fetched', () => {
     renderList({
       selectedConversationId: CONVERSATION_ID,
-      messagesState: { messages: [], isLoading: true, error: null },
+      messagesState: { messages: [], isLoading: true, error: null, streamingContent: null },
     });
 
     expect(screen.getByText('Loading messages...')).toBeInTheDocument();
@@ -84,6 +86,7 @@ describe('<MessagesList />', () => {
         messages: [],
         isLoading: false,
         error: new Error('network down'),
+        streamingContent: null,
       },
     });
 

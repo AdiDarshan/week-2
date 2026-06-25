@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react';
 import { useNewConversation } from '../hooks/useNewConversation';
+import { AI_ASSISTANT_PARTICIPANT_ID } from '../api/constants';
 
 type NewConversationProps = {
   onCreated?: (conversationId: string) => void;
@@ -11,14 +12,14 @@ export function NewConversation({ onCreated }: NewConversationProps) {
     availableUsers,
     isUsersLoading,
     usersError,
-    selectedParticipantIds,
+    selectedParticipantId,
     title,
     submitError,
     isPending,
     canSubmit,
     open,
     close,
-    toggleParticipant,
+    selectParticipant,
     setTitle,
     handleSubmit,
   } = useNewConversation({ onCreated });
@@ -36,11 +37,7 @@ export function NewConversation({ onCreated }: NewConversationProps) {
   }
 
   function handleSelectChange(event: ChangeEvent<HTMLSelectElement>) {
-    const next = Array.from(event.target.selectedOptions, (option) => option.value);
-    const toAdd = next.filter((id) => !selectedParticipantIds.includes(id));
-    const toRemove = selectedParticipantIds.filter((id) => !next.includes(id));
-    toAdd.forEach(toggleParticipant);
-    toRemove.forEach(toggleParticipant);
+    selectParticipant(event.target.value);
   }
 
   const noUsers = !isUsersLoading && !usersError && availableUsers.length === 0;
@@ -48,16 +45,16 @@ export function NewConversation({ onCreated }: NewConversationProps) {
   return (
     <form className="new-conversation-form" onSubmit={handleSubmit}>
       <label className="new-conversation-label">
-        Participants
+        Chat with
         <select
-          multiple
           className="new-conversation-select"
-          value={selectedParticipantIds}
+          value={selectedParticipantId ?? ''}
           onChange={handleSelectChange}
-          disabled={isPending || isUsersLoading || availableUsers.length === 0}
-          aria-label="Participants"
-          size={Math.min(Math.max(availableUsers.length, 3), 6)}
+          disabled={isPending || isUsersLoading}
+          aria-label="Chat with"
         >
+          <option value="">Select someone…</option>
+          <option value={AI_ASSISTANT_PARTICIPANT_ID}>AI Assistant</option>
           {availableUsers.map((user) => (
             <option key={user.id} value={user.id}>
               {user.name}

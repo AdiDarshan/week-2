@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { createConversation } from '../api/conversations';
 import { getUsers } from '../api/users';
 import type { UserDto } from '../api/types';
+import { AI_ASSISTANT_PARTICIPANT_ID } from '../api/constants';
 import { useAuth } from './useAuth';
 import { useConversations } from './useConversations';
 
@@ -18,15 +19,15 @@ export function useNewConversation({ onCreated }: UseNewConversationOptions = {}
   const [availableUsers, setAvailableUsers] = useState<UserDto[]>([]);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
-  const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  const canSubmit = !isPending && selectedParticipantIds.length > 0;
+  const canSubmit = !isPending && selectedParticipantId !== null;
 
   const reset = useCallback(() => {
-    setSelectedParticipantIds([]);
+    setSelectedParticipantId(null);
     setTitle('');
     setSubmitError(null);
     setIsPending(false);
@@ -75,10 +76,8 @@ export function useNewConversation({ onCreated }: UseNewConversationOptions = {}
     };
   }, [isOpen, auth]);
 
-  const toggleParticipant = useCallback((userId: string) => {
-    setSelectedParticipantIds((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId],
-    );
+  const selectParticipant = useCallback((participantId: string) => {
+    setSelectedParticipantId(participantId === '' ? null : participantId);
   }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -90,15 +89,24 @@ export function useNewConversation({ onCreated }: UseNewConversationOptions = {}
       setSubmitError('You must be signed in to create a conversation.');
       return;
     }
+    if (selectedParticipantId === null) {
+      return;
+    }
 
     setIsPending(true);
     setSubmitError(null);
     try {
+      const isAssistant = selectedParticipantId === AI_ASSISTANT_PARTICIPANT_ID;
       const trimmedTitle = title.trim();
-      const conversation = await createConversation(auth.token, {
-        participantIds: selectedParticipantIds,
-        ...(trimmedTitle === '' ? {} : { title: trimmedTitle }),
-      });
+      const conversation = await createConversation(
+        auth.token,
+        isAssistant
+          ? { type: 'assistant', ...(trimmedTitle === '' ? {} : { title: trimmedTitle }) }
+          : {
+              participantIds: [selectedParticipantId],
+              ...(trimmedTitle === '' ? {} : { title: trimmedTitle }),
+            },
+      );
       addConversation(conversation);
       onCreated?.(conversation.id);
       setIsOpen(false);
@@ -115,14 +123,14 @@ export function useNewConversation({ onCreated }: UseNewConversationOptions = {}
     availableUsers,
     isUsersLoading,
     usersError,
-    selectedParticipantIds,
+    selectedParticipantId,
     title,
     submitError,
     isPending,
     canSubmit,
     open,
     close,
-    toggleParticipant,
+    selectParticipant,
     setTitle,
     handleSubmit,
   };

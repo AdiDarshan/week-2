@@ -10,6 +10,7 @@ export const initialMessagesState: MessagesState = {
   messages: [],
   isLoading: true,
   error: null,
+  streamingContent: null,
 };
 
 export function useMessages(conversationId: string | undefined) {
@@ -46,7 +47,7 @@ export function useMessages(conversationId: string | undefined) {
           cursor = page.nextCursor;
         }
 
-        dispatch({ type: 'LOAD_SUCCESS', payload: allMessages });
+        dispatch({ type: 'LOAD_SUCCESS', payload: allMessages.reverse() });
       } catch (err) {
         if (!isCancelled) {
           dispatch({ type: 'LOAD_ERROR', payload: err as Error });
