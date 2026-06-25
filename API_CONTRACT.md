@@ -200,6 +200,7 @@ No body. Requires `Authorization` header.
   {
     "id": "c0c0c0c0-c0c0-4c0c-8c0c-cccccccc0001",
     "title": "Alice & Bob",
+    "type": "human",
     "participantIds": [
       "a0a0a0a0-a0a0-4a0a-8a0a-aaaaaaaa0001",
       "a0a0a0a0-a0a0-4a0a-8a0a-aaaaaaaa0002"
@@ -235,13 +236,18 @@ Requires `Authorization` header.
 }
 ```
 
-- `participantIds` — non-empty array of user ids (the UUIDs returned by
-  `GET /users`). The caller is added automatically; after deduplication the
-  conversation must have **at least 2 unique participants** (i.e. at least
-  one *other* user besides the caller).
+- `type` — optional, one of `"human"` (default) or `"assistant"`.
+  - `"human"` — a normal multi-user conversation. `participantIds` is
+    **non-empty** array of user ids (the UUIDs returned by `GET /users`).
+    The caller is added automatically; after deduplication the conversation
+    must have **at least 2 unique participants** (i.e. at least one *other*
+    user besides the caller).
+  - `"assistant"` — a 1:1 conversation with the AI assistant.
+    `participantIds` is ignored: the server sets participants to the caller
+    plus the assistant sentinel `"ai-assistant"`. No other user is required.
 - `title` — optional string. When omitted, empty, or whitespace-only, the
-  server derives one from the joined participant names (e.g.
-  `"Alice & Bob & Charlie"`).
+  server derives one: joined participant names for `human`
+  (e.g. `"Alice & Bob & Charlie"`), or `"AI Assistant"` for `assistant`.
 
 ### Response — 201 Created
 
@@ -249,6 +255,7 @@ Requires `Authorization` header.
 {
   "id": "c0c0c0c0-c0c0-4c0c-8c0c-cccccccc0010",
   "title": "Project sync",
+  "type": "human",
   "participantIds": [
     "a0a0a0a0-a0a0-4a0a-8a0a-aaaaaaaa0001",
     "a0a0a0a0-a0a0-4a0a-8a0a-aaaaaaaa0002",
@@ -359,6 +366,87 @@ non-empty and no longer than **4000 characters**.
 
 ---
 
+## `POST /chat/ai/stream`
+
+Generate the assistant's reply to the latest messages in an `assistant`
+conversation and **stream it back token-by-token** over Server-Sent Events
+(SSE). This is *not* a normal JSON endpoint: the response is a long-lived
+`text/event-stream` rather than a single body.
+
+The typical flow is two calls:
+
+1. `POST /conversations/:id/messages` — persist the user's message as usual.
+2. `POST /chat/ai/stream` — open the stream; the server reads the recent
+   conversation history (including the message just sent), calls the LLM, and
+   streams the reply.
+
+When the stream finishes, the **full assistant reply is persisted** as a new
+message in the conversation, authored by the sentinel `senderId`
+`"ai-assistant"`. The `done` event hands the client that persisted message's
+`id` and `createdAt` so it can reconcile its in-memory copy with the stored
+row (no client-generated id).
+
+### Request
+
+Requires `Authorization` header.
+
+```json
+{
+  "conversationId": "c0c0c0c0-c0c0-4c0c-8c0c-cccccccc0010"
+}
+```
+
+- `conversationId` — required string. Must be a conversation the caller
+  participates in.
+
+### Response — 200 OK, `Content-Type: text/event-stream`
+
+A sequence of SSE events. There are two kinds:
+
+- **Token events** — one per chunk of generated text, emitted as they arrive.
+  No event name; the `data` field is the raw text fragment:
+
+  ```
+  data: Sure, I found
+
+  data:  two messages
+
+  data:  mentioning invoices.
+
+  ```
+
+  Clients concatenate every token `data` in order to rebuild the full reply.
+
+- **Done event** — exactly one, last. Named `done`; its `data` is a JSON
+  object with the persisted assistant message's identity:
+
+  ```
+  event: done
+  data: {"id":"f4d1aaaa-aaaa-4aaa-8aaa-aaaaaaaa0099","createdAt":"2026-06-25T13:55:00.000Z"}
+
+  ```
+
+  Receiving `done` means the reply is complete and saved. The client should
+  use this `id`/`createdAt` for the assistant message rather than fabricating
+  its own. A stream that closes without a `done` event should be treated as
+  an error.
+
+Events are separated by a blank line (`\n\n`), per the SSE spec.
+
+### Errors
+
+Errors raised *before* streaming begins use the standard JSON envelope:
+
+- `400 Bad Request` — `conversationId` is missing or not a string.
+- `401 Unauthorized` — missing/invalid bearer token.
+- `403 Forbidden` — caller is not a participant in the conversation.
+- `404 Not Found` — no conversation with that `conversationId` exists.
+
+If the LLM call or persistence fails *after* streaming has started, the
+stream terminates without a `done` event.
+
+---
+
 ## Changes log
 
 - **2026-05-28** — Initial contract for the Week 2 mock; matched the
@@ -375,3 +463,9 @@ non-empty and no longer than **4000 characters**.
   `GET /users/me`, switched all ids to server-generated UUIDs, and noted
   that `:id` path params are validated UUIDs (`400 BAD_REQUEST` on bad
   format).
+- **2026-06-25** — Added the AI assistant: documented the `type`
+  (`human` | `assistant`) field and assistant-conversation behavior on
+  `POST /conversations`, and added `POST /chat/ai/stream` — an SSE endpoint
+  that streams the assistant reply as token events plus a final `done` event
+  carrying the persisted message's `id`/`createdAt`. Assistant messages are
+  authored by the `"ai-assistant"` sentinel `senderId`.
