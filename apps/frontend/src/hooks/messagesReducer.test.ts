@@ -21,6 +21,7 @@ const initialState: MessagesState = {
   messages: [],
   isLoading: false,
   error: null,
+  streamingContent: null,
 };
 
 describe('messagesReducer', () => {
@@ -29,6 +30,7 @@ describe('messagesReducer', () => {
       messages: [makeMessage()],
       isLoading: false,
       error: new Error('previous failure'),
+      streamingContent: null,
     };
 
     const next = messagesReducer(stateWithError, { type: 'LOAD_START' });
@@ -43,6 +45,7 @@ describe('messagesReducer', () => {
       messages: [],
       isLoading: true,
       error: new Error('previous'),
+      streamingContent: null,
     };
     const loaded = [
       makeMessage({ id: 'e0e0e0e0-e0e0-4e0e-8e0e-eeeeeeee000a' }),
@@ -65,6 +68,7 @@ describe('messagesReducer', () => {
       messages: existing,
       isLoading: true,
       error: null,
+      streamingContent: null,
     };
     const failure = new Error('network down');
 

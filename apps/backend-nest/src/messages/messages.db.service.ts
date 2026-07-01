@@ -22,7 +22,6 @@ export class MessagesDbService {
     private readonly messageModel: Model<MessageDocument>,
   ) {}
 
-
   async findConversationMessages(
     conversationId: string,
     limit: number,
@@ -32,21 +31,40 @@ export class MessagesDbService {
 
     if (cursor) {
       findFilter.$or = [
-        { createdAt: { $gt: cursor.createdAt } },
-        { createdAt: cursor.createdAt, _id: { $gt: cursor.id } },
+        { createdAt: { $lt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, _id: { $lt: cursor.id } },
       ];
     }
 
     const docs = await this.messageModel
       .find(findFilter)
-      .sort({ createdAt: 1, _id: 1 })
+      .sort({ createdAt: -1, _id: -1 })
       .limit(limit + 1)
       .exec();
 
     const hasMore = docs.length > limit;
-    const messages = hasMore ? docs.slice(0, limit) : docs;
+    return { messages: hasMore ? docs.slice(0, limit) : docs, hasMore };
+  }
 
-    return { messages, hasMore };
+  async searchMessagesInConversations(
+    conversationIds: string[],
+    escapedQuery: string,
+    limit: number,
+  ): Promise<MessageDocument[]> {
+    if (conversationIds.length === 0) {
+      return [];
+    }
+
+    const findFilter: QueryFilter<MessageDocument> = {
+      conversationId: { $in: conversationIds },
+      content: { $regex: escapedQuery, $options: 'i' },
+    };
+
+    return this.messageModel
+      .find(findFilter)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .exec();
   }
 
   async insertMessage(
@@ -65,5 +83,4 @@ export class MessagesDbService {
     );
     return doc;
   }
-
 }

@@ -13,6 +13,7 @@ import { MessagesDbService } from './messages.db.service';
 import type { MessageDocument } from './schemas/message.schema';
 import { UsersService } from '../users/users.service';
 import { UserNotFoundError } from '../users/users.errors';
+import { AI_ASSISTANT_PARTICIPANT_ID } from '../common/constants';
 import type { Message, MessagesPage } from './types';
 import type { CreateMessageInput, DecodedCursor } from './messages.db.service';
 
@@ -21,6 +22,9 @@ const MAX_MESSAGE_LENGTH = 4000;
 export const DEFAULT_MESSAGES_LIMIT = 20;
 const MAX_MESSAGES_LIMIT = 100;
 
+const DEFAULT_SEARCH_LIMIT = 10;
+const MAX_SEARCH_LIMIT = 50;
+
 export type GetMessagesPageInput = {
   conversationId: string;
   requesterId: string;
@@ -28,7 +32,11 @@ export type GetMessagesPageInput = {
   limit?: number;
 };
 
-
+export type SearchMyMessagesInput = {
+  userId: string;
+  query: string;
+  limit?: number;
+};
 
 @Injectable()
 export class MessagesService {
@@ -56,27 +64,55 @@ export class MessagesService {
       throw new NotAConversationParticipantError(requester.id, conversation.id);
     }
 
-    const limit = clampLimit(input.limit);
+    const limit = clampLimit(
+      input.limit,
+      DEFAULT_MESSAGES_LIMIT,
+      MAX_MESSAGES_LIMIT,
+    );
     const cursor = input.cursor ? decodeCursor(input.cursor) : undefined;
 
-    const { messages: docs, hasMore } =
-      await this.messagesDb.findConversationMessages(
-        conversation.id,
-        limit,
-        cursor,
-      );
+    const { messages: docs, hasMore } = await this.messagesDb.findConversationMessages(
+      conversation.id,
+      limit,
+      cursor,
+    );
 
     const messages: Message[] = docs.map(toMessage);
-
     const nextCursor = hasMore ? encodeCursor(docs[docs.length - 1]) : null;
 
     return { messages, nextCursor };
   }
 
+  async searchMyMessages(input: SearchMyMessagesInput): Promise<Message[]> {
+    const user = await this.usersService.findById(input.userId);
+    if (!user) {
+      throw new UserNotFoundError(input.userId);
+    }
+
+    const query = input.query.trim();
+    if (query === '') {
+      throw new BadRequestException('query must be a non-empty string');
+    }
+
+    const conversations =
+      await this.conversationsService.getConversationsForUser(user);
+    const conversationIds = conversations.map((conversation) => conversation.id);
+
+    const docs = await this.messagesDb.searchMessagesInConversations(
+      conversationIds,
+      escapeRegExp(query),
+      clampLimit(input.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT),
+    );
+
+    return docs.map(toMessage);
+  }
+
   async createMessage(input: CreateMessageInput): Promise<Message> {
-    const sender = await this.usersService.findById(input.senderId);
-    if (!sender) {
-      throw new UserNotFoundError(input.senderId);
+    if (input.senderId !== AI_ASSISTANT_PARTICIPANT_ID) {
+      const sender = await this.usersService.findById(input.senderId);
+      if (!sender) {
+        throw new UserNotFoundError(input.senderId);
+      }
     }
 
     const conversation = await this.conversationsService.findById(
@@ -86,8 +122,8 @@ export class MessagesService {
       throw new ConversationNotFoundError(input.conversationId);
     }
 
-    if (!conversation.participantIds.includes(sender.id)) {
-      throw new NotAConversationParticipantError(sender.id, conversation.id);
+    if (!conversation.participantIds.includes(input.senderId)) {
+      throw new NotAConversationParticipantError(input.senderId, conversation.id);
     }
 
     const content = input.content.trim();
@@ -126,7 +162,7 @@ function toMessage(doc: MessageDocument): Message {
     content: doc.content,
     senderId: doc.senderId,
     createdAt: doc.createdAt.toISOString(),
-  };  
+  };
 }
 
 function encodeCursor(doc: MessageDocument): string {
@@ -144,12 +180,20 @@ function decodeCursor(cursor: string): DecodedCursor {
   };
 }
 
-function clampLimit(limit: number | undefined): number {
+function clampLimit(
+  limit: number | undefined,
+  fallback: number,
+  max: number,
+): number {
   if (limit === undefined) {
-    return DEFAULT_MESSAGES_LIMIT;
+    return fallback;
   }
   if (!Number.isInteger(limit) || limit <= 0) {
     throw new BadRequestException('limit must be a positive integer');
   }
-  return Math.min(limit, MAX_MESSAGES_LIMIT);
+  return Math.min(limit, max);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

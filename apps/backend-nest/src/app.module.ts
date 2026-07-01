@@ -5,6 +5,7 @@ import Joi from 'joi';
 import { MessagesModule } from './messages/messages.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { AuthModule } from './auth/auth.module';
+import { AiAssistantModule } from './ai/ai.assistant.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -18,6 +19,7 @@ import { MongooseModule } from '@nestjs/mongoose';
         JWT_SECRET: Joi.string().min(16).required(),
         ALLOWED_CORS_ORIGINS: Joi.string().required(),
         MONGO_URI: Joi.string().uri().required(),
+        OPENAI_API_KEY: Joi.string().required(),
       }),
     }),
     MongooseModule.forRootAsync({
@@ -29,6 +31,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     MessagesModule,
     ConversationsModule,
     AuthModule,
+    AiAssistantModule,
   ],
   providers: [
     {

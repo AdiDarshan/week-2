@@ -6,6 +6,7 @@ import { Conversation } from './schemas/conversation.schema';
 import { InvalidConversationIdError } from './conversations.errors';
 export type CreateConversationInput = {
   title: string;
+  type: 'human' | 'assistant';
   participantIds: string[];
   lastMessageAt: Date;
 };

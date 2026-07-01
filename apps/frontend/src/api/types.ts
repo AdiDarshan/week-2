@@ -4,9 +4,12 @@ export type UserDto = {
   name: string;
 };
 
+export type ConversationType = 'human' | 'assistant';
+
 export type ConversationDto = {
   id: string;
   title: string;
+  type: ConversationType;
   updatedAt: string;
   participantIds: string[];
 };
@@ -45,8 +48,9 @@ export type SendMessageRequestDto = {
 };
 
 export type CreateConversationRequestDto = {
-  participantIds: string[];
+  participantIds?: string[];
   title?: string;
+  type?: ConversationType;
 };
 
 export type ApiErrorCode =
@@ -67,6 +71,7 @@ export type ApiErrorDto = {
 
 export type Conversation = Omit<ConversationDto, 'updatedAt'> & {
   updatedAt: Date;
+  type: ConversationType;
 };
 
 export type Message = Omit<MessageDto, 'createdAt'> & {

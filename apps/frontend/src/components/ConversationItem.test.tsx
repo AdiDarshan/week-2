@@ -10,6 +10,7 @@ const PARTICIPANT_ID = 'a0a0a0a0-a0a0-4a0a-8a0a-aaaaaaaa00ad';
 const conversation: Conversation = {
   id: CONVERSATION_ID,
   title: 'Project discussion',
+  type: 'human',
   updatedAt: new Date('2024-05-02T15:30:00Z'),
   participantIds: [PARTICIPANT_ID],
 };

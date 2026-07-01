@@ -31,8 +31,9 @@ export class ConversationsController {
   ): Promise<Conversation> {
     return this.conversationsService.createConversation({
       creator: user,
-      participantIds: body.participantIds.map((id) => id.trim()),
+      participantIds: (body.participantIds ?? []).map((id) => id.trim()),
       title: body.title,
+      type: body.type,
     });
   }
 }

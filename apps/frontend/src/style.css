@@ -251,7 +251,7 @@ textarea {
 .new-conversation-button {
   width: 100%;
   margin-bottom: 12px;
-  padding: 8px 12px;
+  padding: 9px 12px;
   border: 1px dashed var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -269,12 +269,21 @@ textarea {
 .new-conversation-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   margin: 0 0 12px;
-  padding: 12px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--bg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.new-conversation-form::before {
+  content: 'New conversation';
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
 }
 
 .new-conversation-form input,
@@ -287,6 +296,13 @@ textarea {
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
+  font-size: 14px;
+}
+
+.new-conversation-form input::placeholder {
+  color: var(--text);
+  opacity: 0.6;
+  font-style: italic;
 }
 
 .new-conversation-form input:focus,
@@ -298,11 +314,11 @@ textarea {
 .new-conversation-label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 600;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--text);
 }
 
@@ -312,6 +328,11 @@ textarea {
 
 .new-conversation-select option {
   padding: 6px 8px;
+}
+
+.new-conversation-select option:first-child {
+  font-weight: 600;
+  color: var(--accent);
 }
 
 .new-conversation-select option:checked {
@@ -328,26 +349,32 @@ textarea {
 .new-conversation-actions {
   display: flex;
   gap: 8px;
+  margin-top: 2px;
 }
 
 .new-conversation-actions button {
   flex: 1;
-  padding: 8px 12px;
+  padding: 9px 12px;
   border-radius: var(--radius-sm);
   border: none;
   background: var(--accent);
   color: var(--accent-fg);
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  transition: filter 0.15s;
+  transition: filter 0.15s, transform 0.05s;
 }
 
 .new-conversation-actions button:hover:not(:disabled) {
   filter: brightness(1.08);
 }
 
+.new-conversation-actions button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 .new-conversation-actions button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -355,6 +382,7 @@ textarea {
   background: transparent !important;
   color: var(--text) !important;
   border: 1px solid var(--border) !important;
+  font-weight: 500 !important;
 }
 
 .new-conversation-cancel:hover:not(:disabled) {
