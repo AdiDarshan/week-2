@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react';
 import { useNewConversation } from '../hooks/useNewConversation';
-import { AI_ASSISTANT_PARTICIPANT_ID } from '../api/constants';
+import { AI_ASSISTANT_PARTICIPANT_ID, AI_TUTOR_OPTION } from '../api/constants';
 
 type NewConversationProps = {
   onCreated?: (conversationId: string) => void;
@@ -55,6 +55,7 @@ export function NewConversation({ onCreated }: NewConversationProps) {
         >
           <option value="">Select someone…</option>
           <option value={AI_ASSISTANT_PARTICIPANT_ID}>AI Assistant</option>
+          <option value={AI_TUTOR_OPTION}>AI Tutor (knowledge base)</option>
           {availableUsers.map((user) => (
             <option key={user.id} value={user.id}>
               {user.name}

@@ -34,11 +34,13 @@ export class ApiClientError extends Error {
 }
 
 type RequestOptions = {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'DELETE';
   token?: string;
   body?: unknown;
   query?: Record<string, string | number | undefined>;
 };
+
+const HTTP_NO_CONTENT = 204;
 
 function isApiErrorEnvelope(value: unknown): value is ApiErrorDto {
   if (typeof value !== 'object' || value === null) {
@@ -116,6 +118,11 @@ export async function apiRequest<T>(
       'INTERNAL',
       `Request failed with status ${response.status}`,
     );
+  }
+
+  // DELETE returns 204 with no body; nothing to parse.
+  if (response.status === HTTP_NO_CONTENT) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
