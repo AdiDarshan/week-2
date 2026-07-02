@@ -1,11 +1,10 @@
-export type ConversationType = 'human' | 'assistant';
+export const CONVERSATION_TYPES = ['human', 'assistant', 'tutor'] as const;
+
+export type ConversationType = (typeof CONVERSATION_TYPES)[number];
 
 export const HUMAN_CONVERSATION_TYPE: ConversationType = 'human';
 export const ASSISTANT_CONVERSATION_TYPE: ConversationType = 'assistant';
-export const CONVERSATION_TYPES: ConversationType[] = [
-  HUMAN_CONVERSATION_TYPE,
-  ASSISTANT_CONVERSATION_TYPE,
-];
+export const TUTOR_CONVERSATION_TYPE: ConversationType = 'tutor';
 
 export interface Conversation {
   id: string;
