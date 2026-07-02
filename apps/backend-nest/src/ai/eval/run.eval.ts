@@ -5,7 +5,7 @@ import { AppModule } from '../../app.module';
 import { UsersService } from '../../users/users.service';
 import { ConversationsService } from '../../conversations/conversations.service';
 import { MessagesService } from '../../messages/messages.service';
-import { AiAssistantService } from '../ai.assistant.service';
+import { AssistantService } from '../assistant/assistant.service';
 
 interface EvalPrompt {
   id: string;
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
     const users = app.get(UsersService, { strict: false });
     const conversations = app.get(ConversationsService, { strict: false });
     const messages = app.get(MessagesService, { strict: false });
-    const assistant = app.get(AiAssistantService, { strict: false });
+    const assistant = app.get(AssistantService, { strict: false });
 
     const user = await users.createUser(
       `eval+${Date.now()}@example.com`,
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
       });
 
       let response = '';
-      for await (const token of assistant.generateAssistantReply({
+      for await (const token of assistant.generateReply({
         userId: user.id,
         conversationId: conversation.id,
       })) {

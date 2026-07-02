@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { ToolDefinition } from '../language.model.service.interface';
-import type { MessagesService } from '../../messages/messages.service';
+import type { MessagesService } from '../../../messages/messages.service';
 
 const MIN_RESULTS = 1;
 const MAX_RESULTS = 20;

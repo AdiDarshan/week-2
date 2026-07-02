@@ -1,8 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { MessagesService } from '../messages/messages.service';
-import { ConversationsService } from '../conversations/conversations.service';
-import { ConversationNotFoundError } from '../conversations/conversations.errors';
-import { ASSISTANT_CONVERSATION_TYPE } from '../conversations/types';
+import { MessagesService } from '../../messages/messages.service';
 import { LANGUAGE_MODEL_SERVICE } from './language.model.service.interface';
 import type {
   ChatMessage,
@@ -10,46 +7,31 @@ import type {
   ToolCall,
 } from './language.model.service.interface';
 import { ToolRegistryService } from './tool.registry.service';
-import { buildSystemPrompt } from './prompts/chat.assistant.prompt';
-import { NotAnAssistantConversationError } from './ai.errors';
-import { AI_ASSISTANT_PARTICIPANT_ID } from '../common/constants';
-import type { Message } from '../messages/types';
+import { buildSystemPrompt } from './assistant.prompt';
+import { AI_ASSISTANT_PARTICIPANT_ID } from '../../common/constants';
+import type { Message } from '../../messages/types';
+import type { GenerateReplyInput } from '../types';
 
 const CONVERSATION_HISTORY_LIMIT = 50;
 const MAX_TOOL_ROUNDS = 4;
 const ASSISTANT_FALLBACK_REPLY = 'Sorry, I could not produce a response.';
 
-export interface GenerateAssistantReplyInput {
-  userId: string;
-  conversationId: string;
-}
-
 @Injectable()
-export class AiAssistantService {
+export class AssistantService {
   constructor(
     @Inject(LANGUAGE_MODEL_SERVICE)
     private readonly languageModelService: ILanguageModelService,
     private readonly messagesService: MessagesService,
-    private readonly conversationsService: ConversationsService,
     private readonly toolRegistry: ToolRegistryService,
   ) {}
 
-  async assertAssistantConversation(conversationId: string): Promise<void> {
-    const conversation = await this.conversationsService.findById(conversationId);
-    if (!conversation) {
-      throw new ConversationNotFoundError(conversationId);
-    }
-    if (conversation.type !== ASSISTANT_CONVERSATION_TYPE) {
-      throw new NotAnAssistantConversationError(conversationId);
-    }
-  }
-
-  async *generateAssistantReply(
-    input: GenerateAssistantReplyInput,
+  async *generateReply(
+    input: GenerateReplyInput,
   ): AsyncGenerator<string, Message> {
     const messages: ChatMessage[] = await this.fetchHistory(
       input.conversationId,
       input.userId,
+      CONVERSATION_HISTORY_LIMIT,
     );
 
     const systemPrompt = buildSystemPrompt();
@@ -139,11 +121,12 @@ export class AiAssistantService {
   private async fetchHistory(
     conversationId: string,
     userId: string,
+    limit: number,
   ): Promise<ChatMessage[]> {
     const { messages } = await this.messagesService.getMessagesPage({
       conversationId,
       requesterId: userId,
-      limit: CONVERSATION_HISTORY_LIMIT,
+      limit,
     });
     return messages.reverse().map(toChatMessage);
   }
