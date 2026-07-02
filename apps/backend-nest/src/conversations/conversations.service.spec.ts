@@ -1,11 +1,15 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConversationsService } from './conversations.service';
 import { ConversationsDbService } from './conversations.db.service';
+import { ConversationNotFoundError } from './conversations.errors';
 import { UsersService } from '../users/users.service';
 import { UsersDbService } from '../users/users.db.service';
-import { UserNotFoundError } from '../users/users.errors';
+import { ConversationsDbFake } from '../testing/conversations.db.fake';
+import { UsersDbFake } from '../testing/users.db.fake';
 import type { RegisteredUser } from '../users/types';
+
+const UNKNOWN_OBJECT_ID = '000000000000000000000000';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
@@ -19,9 +23,9 @@ describe('ConversationsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConversationsService,
-        ConversationsDbService,
+        { provide: ConversationsDbService, useValue: new ConversationsDbFake() },
         UsersService,
-        UsersDbService,
+        { provide: UsersDbService, useValue: new UsersDbFake() },
       ],
     }).compile();
 
@@ -96,13 +100,13 @@ describe('ConversationsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('rejects unknown participants with UserNotFoundError', async () => {
+    it('rejects unknown participants with NotFoundException', async () => {
       await expect(
         service.createConversation({
           creator: alice,
-          participantIds: ['00000000-0000-0000-0000-000000000000'],
+          participantIds: [UNKNOWN_OBJECT_ID],
         }),
-      ).rejects.toBeInstanceOf(UserNotFoundError);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
@@ -161,13 +165,10 @@ describe('ConversationsService', () => {
       expect(refreshed?.updatedAt).toBe(later.toISOString());
     });
 
-    it('is a no-op for an unknown conversation id', async () => {
+    it('throws ConversationNotFoundError for an unknown conversation id', async () => {
       await expect(
-        service.updateLastMessageAt(
-          '000000000000000000000000',
-          new Date(),
-        ),
-      ).resolves.not.toThrow();
+        service.updateLastMessageAt(UNKNOWN_OBJECT_ID, new Date()),
+      ).rejects.toBeInstanceOf(ConversationNotFoundError);
     });
   });
 });

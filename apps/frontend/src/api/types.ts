@@ -4,7 +4,15 @@ export type UserDto = {
   name: string;
 };
 
-export type ConversationType = 'human' | 'assistant';
+export type ConversationType = 'human' | 'assistant' | 'tutor';
+
+export type CitationDto = {
+  chunkId: string;
+  documentId: string;
+  documentName: string;
+  snippet: string;
+  score: number;
+};
 
 export type ConversationDto = {
   id: string;
@@ -19,6 +27,7 @@ export type MessageDto = {
   conversationId: string;
   content: string;
   senderId: string;
+  citations?: CitationDto[];
   createdAt: string;
 };
 
@@ -53,6 +62,25 @@ export type CreateConversationRequestDto = {
   type?: ConversationType;
 };
 
+export type DocumentSummaryDto = {
+  id: string;
+  name: string;
+  mimeType: string;
+  createdAt: string;
+};
+
+export type UploadDocumentRequestDto = {
+  name: string;
+  mimeType: string;
+  content: string;
+};
+
+export type IngestionResultDto = {
+  id: string;
+  name: string;
+  alreadyExisted: boolean;
+};
+
 export type ApiErrorCode =
   | 'BAD_REQUEST'
   | 'UNAUTHENTICATED'
@@ -82,4 +110,8 @@ export type Message = Omit<MessageDto, 'createdAt'> & {
 export type MessagesPage = {
   messages: Message[];
   nextCursor: string | null;
+};
+
+export type KnowledgeDocument = Omit<DocumentSummaryDto, 'createdAt'> & {
+  createdAt: Date;
 };

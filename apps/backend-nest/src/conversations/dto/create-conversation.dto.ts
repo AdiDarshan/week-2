@@ -7,14 +7,15 @@ import {
   ValidateIf,
 } from 'class-validator';
 import {
-  ASSISTANT_CONVERSATION_TYPE,
+  HUMAN_CONVERSATION_TYPE,
   CONVERSATION_TYPES,
   type ConversationType,
 } from '../types';
 
 export class CreateConversationDto {
   @ValidateIf(
-    (dto: CreateConversationDto) => dto.type !== ASSISTANT_CONVERSATION_TYPE,
+    (dto: CreateConversationDto) =>
+      dto.type === undefined || dto.type === HUMAN_CONVERSATION_TYPE,
   )
   @IsArray()
   @ArrayNotEmpty()

@@ -4,9 +4,11 @@ import { ClientSession, Model, Types } from 'mongoose';
 import type { ConversationDocument } from './schemas/conversation.schema';
 import { Conversation } from './schemas/conversation.schema';
 import { InvalidConversationIdError } from './conversations.errors';
+import type { ConversationType } from './types';
+
 export type CreateConversationInput = {
   title: string;
-  type: 'human' | 'assistant';
+  type: ConversationType;
   participantIds: string[];
   lastMessageAt: Date;
 };

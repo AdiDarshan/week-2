@@ -19,6 +19,11 @@ export type CreateConversationInput = {
   type?: ConversationType;
 };
 
+const AI_CONVERSATION_TITLES: Record<'assistant' | 'tutor', string> = {
+  assistant: 'AI Assistant',
+  tutor: 'AI Tutor',
+};
+
 @Injectable()
 export class ConversationsService {
   constructor(
@@ -50,18 +55,19 @@ export class ConversationsService {
 
   async createConversation(input: CreateConversationInput): Promise<Conversation> {
     const type = input.type ?? 'human';
-    return type === 'assistant'
-      ? this.createAssistantConversation(input.creator, input.title)
-      : this.createHumanConversation(input);
+    return type === 'human'
+      ? this.createHumanConversation(input)
+      : this.createAiConversation(input.creator, type, input.title);
   }
 
-  private async createAssistantConversation(
+  private async createAiConversation(
     creator: User,
+    type: 'assistant' | 'tutor',
     title?: string,
   ): Promise<Conversation> {
     const doc = await this.conversationsDb.insertConversation({
-      title: title?.trim() || 'AI Assistant',
-      type: 'assistant',
+      title: title?.trim() || AI_CONVERSATION_TITLES[type],
+      type,
       participantIds: [creator.id, AI_ASSISTANT_PARTICIPANT_ID],
       lastMessageAt: new Date(),
     });

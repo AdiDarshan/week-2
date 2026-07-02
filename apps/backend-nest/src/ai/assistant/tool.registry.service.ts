@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { MessagesService } from '../messages/messages.service';
+import { MessagesService } from '../../messages/messages.service';
 import type { ToolDefinition } from './language.model.service.interface';
-import { UnknownToolError } from './ai.errors';
+import { UnknownToolError } from '../ai.errors';
 import { OutputParserService } from './output.parser.service';
 import { searchMyMessagesTool } from './tools/search.tool';
 

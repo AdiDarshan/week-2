@@ -4,7 +4,7 @@ import type { Message } from '../messages/types';
 
 const DONE_EVENT_TYPE = 'done';
 
-export function toAssistantSseStream(
+export function toAiSseStream(
   replyStream: AsyncGenerator<string, Message>,
 ): Observable<MessageEvent> {
   return from(toSseEvents(replyStream));
@@ -25,6 +25,7 @@ async function* toSseEvents(
     data: JSON.stringify({
       id: persisted.id,
       createdAt: persisted.createdAt,
+      citations: persisted.citations,
     }),
   };
 }

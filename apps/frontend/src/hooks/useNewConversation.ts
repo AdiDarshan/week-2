@@ -3,7 +3,8 @@ import type { FormEvent } from 'react';
 import { createConversation } from '../api/conversations';
 import { getUsers } from '../api/users';
 import type { UserDto } from '../api/types';
-import { AI_ASSISTANT_PARTICIPANT_ID } from '../api/constants';
+import { AI_ASSISTANT_PARTICIPANT_ID, AI_TUTOR_OPTION } from '../api/constants';
+import type { CreateConversationRequestDto } from '../api/types';
 import { useAuth } from './useAuth';
 import { useConversations } from './useConversations';
 
@@ -96,17 +97,15 @@ export function useNewConversation({ onCreated }: UseNewConversationOptions = {}
     setIsPending(true);
     setSubmitError(null);
     try {
-      const isAssistant = selectedParticipantId === AI_ASSISTANT_PARTICIPANT_ID;
       const trimmedTitle = title.trim();
-      const conversation = await createConversation(
-        auth.token,
-        isAssistant
-          ? { type: 'assistant', ...(trimmedTitle === '' ? {} : { title: trimmedTitle }) }
-          : {
-              participantIds: [selectedParticipantId],
-              ...(trimmedTitle === '' ? {} : { title: trimmedTitle }),
-            },
-      );
+      const titlePart = trimmedTitle === '' ? {} : { title: trimmedTitle };
+      const body: CreateConversationRequestDto =
+        selectedParticipantId === AI_TUTOR_OPTION
+          ? { type: 'tutor', ...titlePart }
+          : selectedParticipantId === AI_ASSISTANT_PARTICIPANT_ID
+            ? { type: 'assistant', ...titlePart }
+            : { participantIds: [selectedParticipantId], ...titlePart };
+      const conversation = await createConversation(auth.token, body);
       addConversation(conversation);
       onCreated?.(conversation.id);
       setIsOpen(false);

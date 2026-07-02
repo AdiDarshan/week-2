@@ -10,10 +10,10 @@ export class UnknownToolError extends Error {
   }
 }
 
-export class NotAnAssistantConversationError extends DomainError {
+export class NotAnAiConversationError extends DomainError {
   readonly category: DomainErrorCategory = 'BAD_REQUEST';
 
   constructor(public readonly conversationId: string) {
-    super(`conversation "${conversationId}" is not an assistant conversation`);
+    super(`conversation "${conversationId}" is not an AI conversation`);
   }
 }

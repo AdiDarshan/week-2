@@ -1,5 +1,6 @@
 import { apiRequest } from './client';
 import type {
+  CitationDto,
   Message,
   MessageDto,
   MessagesPage,
@@ -39,6 +40,7 @@ export async function getMessages(
 export interface PersistedAssistantMessage {
   id: string;
   createdAt: string;
+  citations?: CitationDto[];
 }
 
 export async function streamAiReply(

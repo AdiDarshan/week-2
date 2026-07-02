@@ -3,15 +3,15 @@ import type { MessageEvent } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current.user.decorator';
-import { AiAssistantService } from './ai.assistant.service';
+import { AiService } from './ai.service';
 import { StreamAiReplyDto } from './dto/stream.ai.reply.dto';
-import { toAssistantSseStream } from './assistant.sse.writer';
+import { toAiSseStream } from './ai.sse.writer';
 import type { User } from '../users/types';
 
 @UseGuards(JwtAuthGuard)
 @Controller('chat')
-export class AiAssistantController {
-  constructor(private readonly aiAssistantService: AiAssistantService) {}
+export class AiController {
+  constructor(private readonly aiService: AiService) {}
 
   @Post('ai/stream')
   @Sse()
@@ -19,15 +19,11 @@ export class AiAssistantController {
     @CurrentUser() user: User,
     @Body() body: StreamAiReplyDto,
   ): Promise<Observable<MessageEvent>> {
-    await this.aiAssistantService.assertAssistantConversation(
-      body.conversationId,
-    );
-
-    const replyStream = this.aiAssistantService.generateAssistantReply({
+    const replyStream = await this.aiService.generateReply({
       userId: user.id,
       conversationId: body.conversationId,
     });
 
-    return toAssistantSseStream(replyStream);
+    return toAiSseStream(replyStream);
   }
 }

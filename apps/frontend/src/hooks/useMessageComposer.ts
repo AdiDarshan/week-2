@@ -71,6 +71,7 @@ export function useMessageComposer(
           conversationId,
           content: fullContent,
           senderId: AI_ASSISTANT_PARTICIPANT_ID,
+          citations: persisted.citations,
           createdAt: new Date(persisted.createdAt),
           isPending: false,
         };

@@ -5,7 +5,8 @@ import Joi from 'joi';
 import { MessagesModule } from './messages/messages.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { AuthModule } from './auth/auth.module';
-import { AiAssistantModule } from './ai/ai.assistant.module';
+import { AiModule } from './ai/ai.module';
+import { KnowledgeModule } from './knowledge/knowledge.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -31,7 +32,8 @@ import { MongooseModule } from '@nestjs/mongoose';
     MessagesModule,
     ConversationsModule,
     AuthModule,
-    AiAssistantModule,
+    AiModule,
+    KnowledgeModule,
   ],
   providers: [
     {
