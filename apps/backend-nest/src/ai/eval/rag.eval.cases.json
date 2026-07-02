@@ -1,0 +1,154 @@
+{
+  "documents": [
+    {
+      "name": "zorblax-protocol.md",
+      "content": "The Zorblax Protocol was ratified in 1987 by the Council of Mirelle. It established three tiers of access: bronze, silver, and gold. Gold-tier members may convene an emergency session with a two-thirds vote."
+    },
+    {
+      "name": "mirelle-city.md",
+      "content": "The city of Mirelle sits on the banks of the Veldt River. Its population is 240,000. Mirelle was founded in 1402 and is famous for its glass bridges."
+    },
+    {
+      "name": "council-procedures.md",
+      "content": "Council sessions are held quarterly. The quorum for a session is 12 members. Votes are recorded by the Scribe of Records. Bronze-tier members may observe sessions but may not vote."
+    },
+    {
+      "name": "veldt-river.md",
+      "content": "The Veldt River flows 800 kilometres from the Aether Mountains to the Saline Sea. Its annual flood deposits the fine silt that makes Mirelle's glassmaking possible."
+    },
+    {
+      "name": "glass-guild.md",
+      "content": "The Mirelle Glass Guild was founded in 1455. Its master artisans are called Luminors. The guild's signature product is the Veldt prism."
+    },
+    {
+      "name": "aether-mountains.md",
+      "content": "The Aether Mountains are the source of the Veldt River. Their highest peak is Mount Caldera at 4,200 metres. The range is rich in cobalt ore."
+    },
+    {
+      "name": "saline-sea.md",
+      "content": "The Saline Sea is landlocked, with salinity three times that of the ocean. Only the Drift Eel survives in its waters. Fishing there has been banned since 1990."
+    },
+    {
+      "name": "silver-tier.md",
+      "content": "Silver-tier members may propose motions, but each motion needs a sponsor from the gold tier. Silver tier is granted after five years of service."
+    },
+    {
+      "name": "mirelle-festival.md",
+      "content": "The Lumen Festival is held every autumn equinox. It features floating lanterns set adrift on the Veldt River. The festival began in 1502."
+    },
+    {
+      "name": "scribe-records.md",
+      "content": "The Scribe of Records is appointed for life and maintains the Codex. The current Scribe of Records is Elen Vos."
+    }
+  ],
+  "questions": [
+    {
+      "id": "ratified-year",
+      "question": "When was the Zorblax Protocol ratified?",
+      "expectedDocument": "zorblax-protocol.md",
+      "expectedAnswerKeywords": ["1987"]
+    },
+    {
+      "id": "zorblax-tiers",
+      "question": "What access tiers does the Zorblax Protocol define?",
+      "expectedDocument": "zorblax-protocol.md",
+      "expectedAnswerKeywords": ["bronze", "silver", "gold"]
+    },
+    {
+      "id": "emergency-session",
+      "question": "Who can convene an emergency session, and what is required?",
+      "expectedDocument": "zorblax-protocol.md",
+      "expectedAnswerKeywords": ["gold", "two-thirds"]
+    },
+    {
+      "id": "mirelle-river",
+      "question": "Which river is the city of Mirelle on?",
+      "expectedDocument": "mirelle-city.md",
+      "expectedAnswerKeywords": ["Veldt"]
+    },
+    {
+      "id": "mirelle-population",
+      "question": "What is the population of Mirelle?",
+      "expectedDocument": "mirelle-city.md",
+      "expectedAnswerKeywords": ["240,000"]
+    },
+    {
+      "id": "mirelle-founded",
+      "question": "When was Mirelle founded?",
+      "expectedDocument": "mirelle-city.md",
+      "expectedAnswerKeywords": ["1402"]
+    },
+    {
+      "id": "council-quorum",
+      "question": "What is the quorum for a council session?",
+      "expectedDocument": "council-procedures.md",
+      "expectedAnswerKeywords": ["12"]
+    },
+    {
+      "id": "bronze-vote",
+      "question": "Are bronze-tier members allowed to vote?",
+      "expectedDocument": "council-procedures.md",
+      "expectedAnswerKeywords": ["observe"]
+    },
+    {
+      "id": "veldt-length",
+      "question": "How long is the Veldt River?",
+      "expectedDocument": "veldt-river.md",
+      "expectedAnswerKeywords": ["800"]
+    },
+    {
+      "id": "veldt-source",
+      "question": "Where does the Veldt River originate?",
+      "expectedDocument": "veldt-river.md",
+      "expectedAnswerKeywords": ["Aether"]
+    },
+    {
+      "id": "glass-guild-founded",
+      "question": "When was the Mirelle Glass Guild founded?",
+      "expectedDocument": "glass-guild.md",
+      "expectedAnswerKeywords": ["1455"]
+    },
+    {
+      "id": "luminors",
+      "question": "What are the Glass Guild's master artisans called?",
+      "expectedDocument": "glass-guild.md",
+      "expectedAnswerKeywords": ["Luminors"]
+    },
+    {
+      "id": "caldera-height",
+      "question": "How tall is Mount Caldera?",
+      "expectedDocument": "aether-mountains.md",
+      "expectedAnswerKeywords": ["4,200"]
+    },
+    {
+      "id": "saline-eel",
+      "question": "Which creature survives in the Saline Sea?",
+      "expectedDocument": "saline-sea.md",
+      "expectedAnswerKeywords": ["Drift Eel"]
+    },
+    {
+      "id": "festival-when",
+      "question": "When is the Lumen Festival held?",
+      "expectedDocument": "mirelle-festival.md",
+      "expectedAnswerKeywords": ["equinox"]
+    },
+    {
+      "id": "scribe-name",
+      "question": "Who is the current Scribe of Records?",
+      "expectedDocument": "scribe-records.md",
+      "expectedAnswerKeywords": ["Elen Vos"]
+    },
+    {
+      "id": "oob-capital",
+      "question": "What is the capital of France?",
+      "expectedDocument": null,
+      "expectedAnswerKeywords": []
+    },
+    {
+      "id": "oob-boiling",
+      "question": "At what temperature does water boil at sea level?",
+      "expectedDocument": null,
+      "expectedAnswerKeywords": []
+    }
+  ]
+}
