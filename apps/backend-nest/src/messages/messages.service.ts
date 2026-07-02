@@ -140,7 +140,10 @@ export class MessagesService {
     let doc: MessageDocument;
     try {
       await session.withTransaction(async () => {
-        doc = await this.messagesDb.insertMessage(input, session);
+        doc = await this.messagesDb.insertMessage(
+          { ...input, content },
+          session,
+        );
         await this.conversationsService.updateLastMessageAt(
           conversation.id,
           doc.createdAt,
@@ -181,10 +184,11 @@ function encodeCursor(doc: MessageDocument): string {
 function decodeCursor(cursor: string): DecodedCursor {
   const decoded = Buffer.from(cursor, 'base64').toString('utf8');
   const [createdAtIso, id] = decoded.split('|');
-  return {
-    createdAt: new Date(createdAtIso),
-    id: new Types.ObjectId(id),
-  };
+  const createdAt = new Date(createdAtIso);
+  if (Number.isNaN(createdAt.getTime()) || !Types.ObjectId.isValid(id ?? '')) {
+    throw new BadRequestException('cursor is not valid');
+  }
+  return { createdAt, id: new Types.ObjectId(id) };
 }
 
 function clampLimit(
