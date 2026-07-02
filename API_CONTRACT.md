@@ -236,7 +236,7 @@ Requires `Authorization` header.
 }
 ```
 
-- `type` — optional, one of `"human"` (default) or `"assistant"`.
+- `type` — optional, one of `"human"` (default), `"assistant"`, or `"tutor"`.
   - `"human"` — a normal multi-user conversation. `participantIds` is
     **non-empty** array of user ids (the UUIDs returned by `GET /users`).
     The caller is added automatically; after deduplication the conversation
@@ -245,9 +245,14 @@ Requires `Authorization` header.
   - `"assistant"` — a 1:1 conversation with the AI assistant.
     `participantIds` is ignored: the server sets participants to the caller
     plus the assistant sentinel `"ai-assistant"`. No other user is required.
+  - `"tutor"` — a 1:1 conversation with the AI tutor, answered exclusively
+    from the conversation's own knowledge base (see the
+    `/knowledge/conversations/:conversationId/documents` endpoints).
+    Participants are handled like `"assistant"`.
 - `title` — optional string. When omitted, empty, or whitespace-only, the
   server derives one: joined participant names for `human`
-  (e.g. `"Alice & Bob & Charlie"`), or `"AI Assistant"` for `assistant`.
+  (e.g. `"Alice & Bob & Charlie"`), `"AI Assistant"` for `assistant`, or
+  `"AI Tutor"` for `tutor`.
 
 ### Response — 201 Created
 
@@ -368,10 +373,17 @@ non-empty and no longer than **4000 characters**.
 
 ## `POST /chat/ai/stream`
 
-Generate the assistant's reply to the latest messages in an `assistant`
+Generate the AI's reply to the latest messages in an `assistant` or `tutor`
 conversation and **stream it back token-by-token** over Server-Sent Events
 (SSE). This is *not* a normal JSON endpoint: the response is a long-lived
 `text/event-stream` rather than a single body.
+
+In a `tutor` conversation the reply is produced by the RAG chain over the
+conversation's knowledge base, and the persisted message carries a
+`citations` array — one entry per source chunk, each with `chunkId`,
+`documentId`, `documentName`, `snippet`, and `score`. When the knowledge
+base is empty or nothing relevant is retrieved, the tutor streams a fixed
+refusal and the message has no citations.
 
 The typical flow is two calls:
 
@@ -437,13 +449,111 @@ Events are separated by a blank line (`\n\n`), per the SSE spec.
 
 Errors raised *before* streaming begins use the standard JSON envelope:
 
-- `400 Bad Request` — `conversationId` is missing or not a string.
+- `400 Bad Request` — `conversationId` is missing or not a string, or the
+  conversation is not an AI conversation (`assistant` or `tutor`).
 - `401 Unauthorized` — missing/invalid bearer token.
 - `403 Forbidden` — caller is not a participant in the conversation.
 - `404 Not Found` — no conversation with that `conversationId` exists.
 
 If the LLM call or persistence fails *after* streaming has started, the
 stream terminates without a `done` event.
+
+---
+
+## Knowledge base
+
+Every **tutor** conversation owns a knowledge base. Documents are addressed
+under their conversation, and all three endpoints share the same guards:
+the conversation must exist, the caller must be a participant (someone
+else's conversation reads as `404` so its existence is not leaked), and it
+must be of type `tutor` (`400` otherwise).
+
+Storage is deduplicated by content: the server hashes the uploaded text
+(SHA-256) and stores each unique document — and its embedded chunks — once
+per user. Uploading the same content to a second conversation just attaches
+the stored document there; no re-chunking or re-embedding happens.
+
+### `POST /knowledge/conversations/:conversationId/documents`
+
+Upload a document into the conversation's knowledge base and ingest it
+(chunk → embed → store) synchronously.
+
+Requires `Authorization` header.
+
+```json
+{
+  "name": "biology-notes.md",
+  "mimeType": "text/markdown",
+  "content": "# Photosynthesis\n..."
+}
+```
+
+- `name` — required string, 1–200 characters.
+- `mimeType` — required, `"text/plain"` or `"text/markdown"` (the only
+  supported formats; PDF is not supported).
+- `content` — required non-empty string, at most 1,000,000 characters. The
+  raw document text; the client reads the file and sends its content.
+
+#### Response — 201 Created
+
+```json
+{
+  "id": "664f1c2ab1e2cd0012345678",
+  "name": "biology-notes.md",
+  "alreadyExisted": false
+}
+```
+
+`alreadyExisted` is `true` when the same content (by hash) was already in
+the user's store; the document was linked to this conversation without
+re-ingestion, and `id`/`name` refer to the original upload.
+
+#### Errors
+
+- `400 Bad Request` — body fails validation, the content has no usable
+  text, or the conversation is not a `tutor` conversation.
+- `401 Unauthorized` — missing/invalid bearer token.
+- `404 Not Found` — the conversation does not exist or the caller is not a
+  participant.
+
+### `GET /knowledge/conversations/:conversationId/documents`
+
+List the documents in this conversation's knowledge base, newest first.
+
+#### Response — 200 OK
+
+```json
+[
+  {
+    "id": "664f1c2ab1e2cd0012345678",
+    "name": "biology-notes.md",
+    "mimeType": "text/markdown",
+    "createdAt": "2026-07-01T10:00:00.000Z"
+  }
+]
+```
+
+#### Errors
+
+Same guards as upload: `400` (not a tutor conversation), `401`, `404`.
+
+### `DELETE /knowledge/conversations/:conversationId/documents/:id`
+
+Remove a document from this conversation's knowledge base. The stored
+document and its chunks are only deleted once no conversation links to
+them anymore; other conversations that share the same content keep it.
+
+#### Response — 204 No Content
+
+Empty body.
+
+#### Errors
+
+- `400 Bad Request` — the conversation is not a `tutor` conversation.
+- `401 Unauthorized` — missing/invalid bearer token.
+- `404 Not Found` — the conversation does not exist, the caller is not a
+  participant, or the document is not in this conversation's knowledge
+  base.
 
 ---
 
@@ -469,3 +579,9 @@ stream terminates without a `done` event.
   that streams the assistant reply as token events plus a final `done` event
   carrying the persisted message's `id`/`createdAt`. Assistant messages are
   authored by the `"ai-assistant"` sentinel `senderId`.
+- **2026-07-02** — Added the AI tutor and per-conversation knowledge bases:
+  the `"tutor"` conversation type, the
+  `/knowledge/conversations/:conversationId/documents` endpoints
+  (upload/list/delete with content-hash dedup across conversations), tutor
+  replies over `POST /chat/ai/stream` carrying `citations`, and the `400`
+  on streaming into a non-AI conversation.
