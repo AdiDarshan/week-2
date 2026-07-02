@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { InvalidCredentialsError } from './auth.errors';
 import { UsersService } from '../users/users.service';
 import { UsersDbService } from '../users/users.db.service';
+import { UsersDbFake } from '../testing/users.db.fake';
 import { EmailAlreadyExistsError } from '../users/users.errors';
 
 describe('AuthService', () => {
@@ -17,7 +18,7 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         UsersService,
-        UsersDbService,
+        { provide: UsersDbService, useValue: new UsersDbFake() },
         { provide: JwtService, useValue: jwtService },
       ],
     }).compile();

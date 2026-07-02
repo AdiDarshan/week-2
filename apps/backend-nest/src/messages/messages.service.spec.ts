@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getConnectionToken } from '@nestjs/mongoose';
 import { MessagesService } from './messages.service';
 import { MessagesDbService } from './messages.db.service';
 import { ConversationsService } from '../conversations/conversations.service';
@@ -11,8 +12,14 @@ import {
 import { UsersService } from '../users/users.service';
 import { UsersDbService } from '../users/users.db.service';
 import { UserNotFoundError } from '../users/users.errors';
+import { ConversationsDbFake } from '../testing/conversations.db.fake';
+import { MessagesDbFake } from '../testing/messages.db.fake';
+import { UsersDbFake } from '../testing/users.db.fake';
+import { connectionFake } from '../testing/mongo.connection.fake';
 import type { RegisteredUser } from '../users/types';
 import type { Conversation } from '../conversations/types';
+
+const UNKNOWN_OBJECT_ID = '000000000000000000000000';
 
 describe('MessagesService', () => {
   let service: MessagesService;
@@ -28,10 +35,14 @@ describe('MessagesService', () => {
       providers: [
         MessagesService,
         UsersService,
-        UsersDbService,
+        { provide: UsersDbService, useValue: new UsersDbFake() },
         ConversationsService,
-        ConversationsDbService,
-        MessagesDbService,
+        {
+          provide: ConversationsDbService,
+          useValue: new ConversationsDbFake(),
+        },
+        { provide: MessagesDbService, useValue: new MessagesDbFake() },
+        { provide: getConnectionToken(), useValue: connectionFake() },
       ],
     }).compile();
 
@@ -81,7 +92,7 @@ describe('MessagesService', () => {
       await expect(
         service.createMessage({
           conversationId: conversation.id,
-          senderId: '00000000-0000-0000-0000-000000000000',
+          senderId: UNKNOWN_OBJECT_ID,
           content: 'hi',
         }),
       ).rejects.toBeInstanceOf(UserNotFoundError);
@@ -90,7 +101,7 @@ describe('MessagesService', () => {
     it('rejects an unknown conversation with ConversationNotFoundError', async () => {
       await expect(
         service.createMessage({
-          conversationId: '00000000-0000-0000-0000-000000000000',
+          conversationId: UNKNOWN_OBJECT_ID,
           senderId: alice.id,
           content: 'hi',
         }),
@@ -152,7 +163,7 @@ describe('MessagesService', () => {
         requesterId: alice.id,
       });
 
-      expect(page.messages.map((m) => m.content)).toEqual(['one', 'two']);
+      expect(page.messages.map((m) => m.content)).toEqual(['two', 'one']);
       expect(page.nextCursor).toBeNull();
     });
 
@@ -173,7 +184,7 @@ describe('MessagesService', () => {
       });
 
       expect(firstPage.messages).toHaveLength(2);
-      expect(firstPage.nextCursor).toBe('2');
+      expect(firstPage.nextCursor).toEqual(expect.any(String));
 
       const secondPage = await service.getMessagesPage({
         conversationId: conversation.id,

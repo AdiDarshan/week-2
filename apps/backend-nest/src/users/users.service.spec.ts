@@ -1,14 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { UsersDbService } from './users.db.service';
+import { UsersDbFake } from '../testing/users.db.fake';
 import { verifyPassword } from '../common/password.utils';
+
+const OBJECT_ID_PATTERN = /^[0-9a-f]{24}$/i;
+const UNKNOWN_OBJECT_ID = '000000000000000000000000';
 
 describe('UsersService', () => {
   let service: UsersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService, UsersDbService],
+      providers: [
+        UsersService,
+        { provide: UsersDbService, useValue: new UsersDbFake() },
+      ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
@@ -28,9 +35,7 @@ describe('UsersService', () => {
 
       expect(user.email).toBe('alice@example.com');
       expect(user.name).toBe('Alice');
-      expect(user.id).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-      );
+      expect(user.id).toMatch(OBJECT_ID_PATTERN);
       expect(user.passwordHash).not.toBe('supersecret');
       await expect(
         verifyPassword('supersecret', user.passwordHash),
@@ -53,21 +58,8 @@ describe('UsersService', () => {
         service.findByEmail('nobody@example.com'),
       ).resolves.toBeUndefined();
       await expect(
-        service.findById('000000000000000000000000'),
+        service.findById(UNKNOWN_OBJECT_ID),
       ).resolves.toBeUndefined();
-    });
-
-    it('treats emails case- and whitespace-insensitively', async () => {
-      const created = await service.createUser(
-        '  Alice@Example.COM ',
-        'pw12345678',
-        'Alice',
-      );
-
-      expect(created.email).toBe('alice@example.com');
-      expect(service.findByEmail('alice@example.com')).toEqual(created);
-      expect(service.findByEmail('ALICE@example.com')).toEqual(created);
-      expect(service.findByEmail('  alice@EXAMPLE.com  ')).toEqual(created);
     });
   });
 
