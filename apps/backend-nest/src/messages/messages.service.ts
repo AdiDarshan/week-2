@@ -161,6 +161,13 @@ function toMessage(doc: MessageDocument): Message {
     conversationId: doc.conversationId,
     content: doc.content,
     senderId: doc.senderId,
+    citations: doc.citations?.map((citation) => ({
+      chunkId: citation.chunkId,
+      documentId: citation.documentId,
+      documentName: citation.documentName,
+      snippet: citation.snippet,
+      score: citation.score,
+    })),
     createdAt: doc.createdAt.toISOString(),
   };
 }

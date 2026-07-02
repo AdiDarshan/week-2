@@ -1,8 +1,11 @@
+import type { Citation } from '../knowledge/types';
+
 export interface Message {
   id: string;
   conversationId: string;
   content: string;
   senderId: string;
+  citations?: Citation[];
   createdAt: string;
 }
 

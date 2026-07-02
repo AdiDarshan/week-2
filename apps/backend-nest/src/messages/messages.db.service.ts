@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, QueryFilter, Types } from 'mongoose';
 import type { MessageDocument } from './schemas/message.schema';
 import { Message } from './schemas/message.schema';
+import type { Citation } from '../knowledge/types';
 
 export type DecodedCursor = {
   createdAt: Date;
@@ -13,6 +14,7 @@ export type CreateMessageInput = {
   conversationId: string;
   senderId: string;
   content: string;
+  citations?: Citation[];
 };
 
 @Injectable()
@@ -77,6 +79,7 @@ export class MessagesDbService {
           conversationId: input.conversationId,
           content: input.content,
           senderId: input.senderId,
+          citations: input.citations,
         },
       ],
       { session },
